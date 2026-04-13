@@ -1,0 +1,3916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Shit Done - App</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            background-color: #f5f0e6;
+            color: #1a1a1a;
+        }
+
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 769px) {
+            .app-container {
+                max-width: 1200px;
+            }
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #f5f0e6;
+            border-bottom: 2px solid #1a1a1a;
+            padding: 12px 16px;
+            display: flex;
+            gap: 24px;
+            overflow-x: auto;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-tab {
+            flex: 0 0 auto;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            color: #1a1a1a;
+            border: none;
+            background: none;
+            padding: 8px 0;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav-tab.active {
+            color: #f5c518;
+            border-bottom-color: #f5c518;
+        }
+
+        .nav-tab:hover:not(.active) {
+            opacity: 0.7;
+        }
+
+        /* Scoreboard Bar */
+        .scoreboard-bar {
+            background-color: #1a1a1a;
+            color: #f5f0e6;
+            padding: 12px 16px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            border-bottom: 2px solid #f5c518;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .scoreboard-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .scoreboard-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f5c518;
+        }
+
+        .scoreboard-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        @media (min-width: 769px) {
+            .content-area {
+                padding: 24px;
+            }
+        }
+
+        /* Header Section */
+        .gsd-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .gsd-title {
+            font-size: 48px;
+            font-weight: 900;
+            letter-spacing: -2px;
+            color: #1a1a1a;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .gsd-tagline {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            letter-spacing: 1px;
+        }
+
+        /* Streak Badge */
+        .streak-badge {
+            display: inline-block;
+            background-color: #f5c518;
+            color: #1a1a1a;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        /* Progress Bar */
+        .progress-section {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background-color: #e0dcd4;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            border: 1px solid #1a1a1a;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f5c518, #22c55e);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+        }
+
+        /* Brutal Truth Banner */
+        .brutal-truth {
+            background-color: #1a1a1a;
+            border-left: 4px solid #f5c518;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #f5f0e6;
+            font-style: italic;
+        }
+
+        /* Eat the Frog Card */
+        .frog-card {
+            background-color: #1a1a1a;
+            border: 2px solid #f5c518;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .frog-badge {
+            position: absolute;
+            top: -10px;
+            right: 16px;
+            background-color: #f5c518;
+            color: #1a1a1a;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .frog-title {
+            color: #f5f0e6;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .frog-task {
+            color: #f5c518;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .frog-description {
+            color: #999;
+            font-size: 12px;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .start-ugly-btn {
+            background-color: #f5c518;
+            color: #1a1a1a;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+
+        .start-ugly-btn:hover {
+            background-color: #f0b913;
+            transform: translateY(-2px);
+        }
+
+        .start-ugly-tooltip {
+            background-color: #333;
+            color: #f5f0e6;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-top: 8px;
+            border-left: 2px solid #f5c518;
+        }
+
+        /* Task List */
+        .task-list {
+            margin: 20px 0;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background-color: #fff;
+            border: 1px solid #e0dcd4;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .task-item:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .task-item.completed {
+            background-color: #f0f0f0;
+            opacity: 0.6;
+        }
+
+        .task-checkbox {
+            flex: 0 0 24px;
+            width: 24px;
+            height: 24px;
+            border: 2px solid #1a1a1a;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fff;
+            transition: all 0.2s;
+            margin-top: 2px;
+        }
+
+        .task-checkbox:hover {
+            border-color: #f5c518;
+        }
+
+        .task-checkbox.checked {
+            background-color: #22c55e;
+            border-color: #22c55e;
+            color: #fff;
+        }
+
+        .task-checkbox.checked::after {
+            content: '✓';
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .task-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .task-text {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .task-category {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .task-notes-preview {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .meme-banner {
+            margin-bottom: 16px;
+        }
+
+        .edit-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .edit-modal {
+            background: #f5f0e6;
+            border-radius: 16px;
+            padding: 28px;
+            width: 90%;
+            max-width: 420px;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: popIn 0.3s ease;
+        }
+
+        .edit-modal h3 {
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .edit-modal label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+            margin-bottom: 6px;
+            margin-top: 16px;
+        }
+
+        .edit-modal label:first-of-type {
+            margin-top: 0;
+        }
+
+        .edit-modal input,
+        .edit-modal textarea,
+        .edit-modal select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+            box-sizing: border-box;
+        }
+
+        .edit-modal textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .edit-modal input:focus,
+        .edit-modal textarea:focus,
+        .edit-modal select:focus {
+            outline: none;
+            border-color: #f5c518;
+        }
+
+        .edit-modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .edit-modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .edit-modal-buttons .btn-save {
+            background: #f5c518;
+            color: #1a1a1a;
+        }
+
+        .edit-modal-buttons .btn-cancel {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .task-badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-positive {
+            background-color: #e8f5e9;
+            color: #22c55e;
+        }
+
+        .badge-negative {
+            background-color: #ffebee;
+            color: #ef4444;
+        }
+
+        .badge-neutral {
+            background-color: #fff3e0;
+            color: #f5c518;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn-small {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+
+        .btn-small:hover {
+            background-color: #f5f0e6;
+            border-color: #1a1a1a;
+        }
+
+        .btn-delete {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #ef4444;
+            background-color: #fff;
+            color: #ef4444;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background-color: #ffebee;
+        }
+
+        /* This Week Stats */
+        .this-week {
+            margin: 24px 0;
+        }
+
+        .this-week-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            color: #666;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .stat-card {
+            background-color: #fff;
+            border: 1px solid #e0dcd4;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 900;
+            color: #f5c518;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* Matrix View */
+        .matrix-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        @media (min-width: 769px) {
+            .matrix-container {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+        }
+
+        .matrix-column {
+            background-color: #fff;
+            border: 2px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 400px;
+        }
+
+        .matrix-column-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+            line-height: 1.4;
+        }
+
+        .matrix-points {
+            font-size: 11px;
+            color: #f5c518;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .matrix-tasks {
+            min-height: 200px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .matrix-task {
+            background-color: #f9f9f9;
+            border: 1px solid #e0dcd4;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: move;
+            transition: all 0.2s;
+        }
+
+        .matrix-task:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .matrix-task.drag-over {
+            background-color: #f5c518;
+            border-color: #f5c518;
+            opacity: 0.7;
+        }
+
+        .matrix-add-task {
+            display: flex;
+            gap: 8px;
+        }
+
+        .matrix-add-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .matrix-add-btn {
+            padding: 8px 12px;
+            background-color: #f5c518;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .matrix-add-btn:hover {
+            background-color: #f0b913;
+        }
+
+        /* Brain Dump View */
+        .brain-dump-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .brain-dump-intro {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+
+        .brain-dump-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .brain-dump-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #1a1a1a;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .brain-dump-btn {
+            padding: 12px;
+            background-color: #f5c518;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 12px;
+        }
+
+        .brain-dump-btn:hover {
+            background-color: #f0b913;
+        }
+
+        .brain-dump-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .brain-dump-item {
+            background-color: #fff;
+            border: 2px solid #e0dcd4;
+            padding: 12px;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .brain-dump-item:hover {
+            border-color: #f5c518;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .brain-dump-item-text {
+            font-size: 13px;
+            word-break: break-word;
+            flex: 1;
+        }
+
+        .brain-dump-item-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .categorize-btn {
+            flex: 1;
+            min-width: 60px;
+            padding: 6px;
+            border: 1px solid #ddd;
+            background-color: #f5f0e6;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+
+        .categorize-btn:hover {
+            background-color: #f5c518;
+            border-color: #f5c518;
+        }
+
+        /* Brain Dump Expanded View */
+        .brain-dump-expanded {
+            background-color: #fff;
+            border: 2px solid #f5c518;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        .brain-dump-expanded-header {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .brain-dump-expanded-field {
+            margin-bottom: 12px;
+        }
+
+        .brain-dump-expanded-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .brain-dump-expanded-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .brain-dump-expanded-select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            background-color: #fff;
+        }
+
+        .brain-dump-expanded-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .brain-dump-save-btn {
+            flex: 1;
+            padding: 10px;
+            background-color: #22c55e;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        .brain-dump-save-btn:hover {
+            background-color: #16a34a;
+        }
+
+        .brain-dump-expanded-delete {
+            flex: 1;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        .brain-dump-expanded-delete:hover {
+            background-color: #ffebee;
+        }
+
+        /* Wins View */
+        .wins-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .total-score-box {
+            background: linear-gradient(135deg, #1a1a1a, #333);
+            color: #f5f0e6;
+            padding: 32px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #f5c518;
+        }
+
+        .total-score-value {
+            font-size: 64px;
+            font-weight: 900;
+            color: #f5c518;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .total-score-label {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .wins-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .wins-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+        }
+
+        .rewards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .reward-card {
+            background-color: #fff;
+            border: 2px solid #22c55e;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .reward-name {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .reward-reason {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .reward-points {
+            font-size: 12px;
+            color: #22c55e;
+            font-weight: 700;
+        }
+
+        .completed-tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .completed-task-item {
+            background-color: #fff;
+            border: 1px solid #22c55e;
+            padding: 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .completed-task-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .completed-task-points {
+            background-color: #22c55e;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .reflection-section {
+            background-color: #fff3e0;
+            border: 1px solid #f5c518;
+            padding: 16px;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .reflection-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .reflection-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .reflection-item {
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            border-left: 3px solid #f5c518;
+        }
+
+        /* Done View */
+        .done-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .done-header {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .done-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .done-stat {
+            background-color: #fff;
+            border: 1px solid #e0dcd4;
+            padding: 12px 16px;
+            border-radius: 6px;
+            flex: 1;
+            text-align: center;
+        }
+
+        .done-stat-value {
+            font-size: 24px;
+            font-weight: 900;
+            color: #f5c518;
+            line-height: 1;
+        }
+
+        .done-stat-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .done-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .done-filter-btn {
+            padding: 8px 12px;
+            border: 2px solid #1a1a1a;
+            background-color: #fff;
+            color: #1a1a1a;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .done-filter-btn.active {
+            background-color: #f5c518;
+            border-color: #f5c518;
+            color: #1a1a1a;
+        }
+
+        .done-filter-btn:hover {
+            border-color: #f5c518;
+        }
+
+        .done-group {
+            margin-bottom: 20px;
+        }
+
+        .done-group-header {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .done-group-total {
+            font-size: 10px;
+            color: #999;
+        }
+
+        .done-item {
+            background-color: #fff;
+            border-left: 4px solid;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .done-item-left {
+            flex: 1;
+        }
+
+        .done-item-text {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .done-item-meta {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .done-item-points {
+            font-weight: 700;
+            font-size: 13px;
+            padding: 4px 8px;
+            background-color: #f5f0e6;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+
+        /* Calendar View */
+        .calendar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .calendar-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .calendar-tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #1a1a1a;
+            background-color: #fff;
+            color: #1a1a1a;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .calendar-tab-btn.active {
+            background-color: #f5c518;
+            border-color: #f5c518;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .calendar-nav-btn {
+            padding: 8px 12px;
+            border: 1px solid #1a1a1a;
+            background-color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 11px;
+        }
+
+        .calendar-nav-btn:hover {
+            background-color: #f5f0e6;
+        }
+
+        .calendar-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        /* Month View */
+        .calendar-month {
+            background-color: #fff;
+            border: 1px solid #e0dcd4;
+            border-radius: 6px;
+            padding: 16px;
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .calendar-weekday {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 8px 4px;
+            color: #666;
+        }
+
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 1px solid #e0dcd4;
+            border-radius: 4px;
+            padding: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #fff;
+        }
+
+        .calendar-day:hover {
+            border-color: #f5c518;
+            background-color: #fffbf0;
+        }
+
+        .calendar-day.today {
+            background-color: #f5c518;
+            border-color: #f5c518;
+            font-weight: 700;
+        }
+
+        .calendar-day-number {
+            font-weight: 700;
+        }
+
+        .calendar-day-indicators {
+            display: flex;
+            gap: 2px;
+            margin-top: 2px;
+        }
+
+        .calendar-day-dot {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+        }
+
+        /* Week View */
+        .calendar-week {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+        }
+
+        .calendar-week-day {
+            background-color: #fff;
+            border: 1px solid #e0dcd4;
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .calendar-week-day-header {
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f5c518;
+        }
+
+        .calendar-week-day-name {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .calendar-week-day-date {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .calendar-week-tasks {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .calendar-week-task {
+            background-color: #f9f9f9;
+            border-left: 3px solid;
+            padding: 8px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        /* Day View */
+        .calendar-day-view {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .calendar-day-large {
+            text-align: center;
+            padding: 24px;
+            background-color: #fff;
+            border: 1px solid #e0dcd4;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        .calendar-day-large-date {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .calendar-day-large-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .calendar-day-tasks-by-cat {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .calendar-day-cat-group {
+            background-color: #fff;
+            border: 1px solid #e0dcd4;
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .calendar-day-cat-name {
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+
+        .calendar-day-cat-tasks {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* Completion Popup */
+        .completion-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .completion-card {
+            background-color: #fff;
+            border: 2px solid #f5c518;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            animation: popUp 0.3s ease;
+        }
+
+        @keyframes popUp {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .completion-emoji {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .completion-points {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            line-height: 1;
+        }
+
+        .completion-points.positive {
+            color: #22c55e;
+        }
+
+        .completion-points.negative {
+            color: #ef4444;
+        }
+
+        .completion-points.neutral {
+            color: #f5c518;
+        }
+
+        .completion-quote {
+            font-size: 14px;
+            font-style: italic;
+            color: #666;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .completion-task {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .completion-category {
+            font-size: 12px;
+            font-weight: 600;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Weekly Reset Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #f5f0e6;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 2px solid #1a1a1a;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #1a1a1a;
+        }
+
+        .reset-question {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .reset-question-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+
+        .reset-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .reset-item {
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            background-color: #fff;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .reset-checkbox {
+            flex: 0 0 20px;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .reset-item-text {
+            flex: 1;
+            font-size: 13px;
+        }
+
+        .reset-action {
+            display: flex;
+            gap: 6px;
+        }
+
+        .reset-btn-small {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .btn-primary {
+            flex: 1;
+            padding: 12px;
+            background-color: #f5c518;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary:hover {
+            background-color: #f0b913;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 12px;
+            background-color: #fff;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #f5f0e6;
+        }
+
+        /* Sidebar on Desktop */
+        .today-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        @media (min-width: 769px) {
+            .today-layout {
+                display: grid;
+                grid-template-columns: 1fr 300px;
+                gap: 24px;
+            }
+        }
+
+        .today-main {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .today-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar-card {
+            background-color: #fff;
+            border: 2px solid #1a1a1a;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .bare-min-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .bare-min-item {
+            background-color: #f9f9f9;
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 3px solid #f5c518;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #1a1a1a;
+            color: #f5f0e6;
+            border: 2px solid #f5c518;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 11px;
+        }
+
+        .reset-btn:hover {
+            background-color: #333;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1a1a1a;
+            color: #f5f0e6;
+            padding: 16px;
+            border-radius: 6px;
+            border-left: 4px solid #f5c518;
+            z-index: 300;
+            max-width: 90%;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-20 {
+            margin-top: 20px;
+        }
+
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 32px 16px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state-text {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Exact book category names and descriptions
+        const CATEGORIES = {
+            now: {
+                id: 'now',
+                name: 'Need to Do It – Now',
+                points: 3,
+                description: 'High-stakes, time-sensitive, possibly life-dependent tasks. Bills, deadlines, feeding actual living things.',
+                emoji: '🔥'
+            },
+            someday: {
+                id: 'someday',
+                name: 'Need to Do It – Someday',
+                points: 2,
+                description: "The 'not today, Satan' tasks that actually matter but aren't on fire yet. Things like, cleaning the garage, scheduling a checkup, or planning your escape from group chats. They live on the edge of responsibility.",
+                emoji: '⏰'
+            },
+            forSomeReason: {
+                id: 'forSomeReason',
+                name: 'Need to Do it – For Some Reason',
+                points: 1,
+                description: "You can't remember why, but it's been haunting your to-do list since 2018.",
+                emoji: '🤔'
+            },
+            whyOnList: {
+                id: 'whyOnList',
+                name: 'Why Is This On My List?',
+                points: -1,
+                description: "The garbage drawer of your mental desktop. Pointless, guilt-fueled nonsense like 'relabel the spice rack alphabetically' or 'research Icelandic moss.' Completing these actually costs you points because you've been tricked into busywork. Delete immediately, reclaim your soul.",
+                emoji: '🗑️'
+            },
+            squirrel: {
+                id: 'squirrel',
+                name: 'Squirrel! – What Else Did I Do?',
+                points: 0,
+                description: 'Unplanned tasks and happy accidents that still moved things forward.',
+                emoji: '🐿️'
+            },
+            rewards: {
+                id: 'rewards',
+                name: 'Damn I\'m Good – Look What I Get',
+                points: 0,
+                description: 'The victory lap. Celebrate survival with coffee, naps, or smug self-satisfaction.',
+                emoji: '🏆'
+            },
+            reflection: {
+                id: 'reflection',
+                name: 'What Was I Thinking?',
+                points: 0,
+                description: 'The debrief zone for every questionable use of time. No points, just reflection.',
+                emoji: '💭'
+            }
+        };
+
+        // Exact quotes from the book
+        const QUOTES = [
+            "You're not lazy. You're just trying to survive in a world that thinks Wi-Fi is a personality trait.",
+            "Your brain has a daily decision budget. Spend it on what matters, or watch it bleed out on toothpaste and lunch menus.",
+            "If managing your life doesn't feel like a game, you'll never play it.",
+            "You don't need motivation; you need momentum.",
+            "The scoreboard doesn't judge you. It just keeps score. And somehow, that's enough.",
+            "Your brain doesn't need a trophy. It just needs a tally.",
+            "Do less, but do it on purpose. That's not laziness—that's strategy with a nap built in.",
+            "You don't need a revolution. You need a one-percent-per-day evolution that sneaks up on you like a software update.",
+            "Every day you decide to start is the right day to start. Even Tuesday. Especially Tuesday.",
+            "You're just human, doing your best—and honestly, that's pretty damn productive.",
+            "Done is divine. Perfect is the enemy of bedtime.",
+            "Five ugly minutes beats zero perfect ones. Momentum always wins.",
+            "You don't need discipline. You need a good enough bribe.",
+            "Make the right thing easy and the wrong thing annoying. That's it. That's the whole strategy.",
+            "Give yourself all day, and your brain will use all day—mostly on nonsense.",
+            "Fifteen minutes of honest accounting beats seven days of productive-looking chaos."
+        ];
+
+        const BRUTAL_TRUTH_QUOTES = [
+            "You're not multitasking. You're just failing at multiple things simultaneously.",
+            "If you're 'keeping it all in your head,' you're not organized—you're gambling with worse odds.",
+            "Most of your to-do list is performance art. You're not productive—you're just busy in a way that looks convincing.",
+            "You already know which tasks are pointless. You just keep doing them because 'busy' feels safer than 'done.'",
+            "Half your to-do list is a graveyard of things that stopped mattering months ago, and you're still bringing them flowers.",
+            "'I'll do it later' is not a plan. It's a lie you tell yourself to feel better about not doing it now.",
+            "You're not 'saving it for later.' You're avoiding a thirty-second task with thirty minutes of mental negotiation. The math isn't mathing.",
+            "You don't lack ability. You lack evidence that you're not a disaster. The scoreboard provides the evidence.",
+            "The voice in your head that says you're not doing enough? It's lying. It's always been lying. Fire it and hire a kinder narrator."
+        ];
+
+        function GetShitDoneApp() {
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [loginEmail, setLoginEmail] = useState('');
+            const [loginStep, setLoginStep] = useState('email'); // 'email', 'confirm', 'done'
+            const [showReviewPopup, setShowReviewPopup] = useState(false);
+            const [hasReviewed, setHasReviewed] = useState(false);
+            const [currentView, setCurrentView] = useState('today');
+            const today = new Date();
+            const threeDaysFromNow = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000);
+            const oneDayFromNow = new Date(today.getTime() + 1 * 24 * 60 * 60 * 1000);
+            const fourteenDaysFromNow = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
+            const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+            const twentyOneDaysFromNow = new Date(today.getTime() + 21 * 24 * 60 * 60 * 1000);
+            const fiveDaysFromNow = new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000);
+            const tenDaysFromNow = new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000);
+
+            const [tasks, setTasks] = useState({
+                now: [
+                    { id: '1', text: 'File quarterly taxes', category: 'now', completed: false, dueDate: threeDaysFromNow.toISOString(), notes: 'Need W-2 and 1099 forms. Check deductions.' },
+                    { id: '2', text: 'Submit project proposal', category: 'now', completed: false, dueDate: oneDayFromNow.toISOString(), notes: 'Final draft in shared drive. Get sign-off from Maria.' },
+                    { id: '3', text: 'Call the dentist back', category: 'now', completed: false, dueDate: today.toISOString(), notes: 'Rescheduling cleaning. Morning slots preferred.' },
+                    { id: '11', text: 'Pay overdue electric bill', category: 'now', completed: false, dueDate: today.toISOString(), notes: 'Past due. Autopay failed last month.' },
+                    { id: '12', text: 'Send client deliverables', category: 'now', completed: false, dueDate: oneDayFromNow.toISOString(), notes: 'Final PDF and slide deck. They asked twice already.' },
+                    { id: '13', text: 'Book vet appointment for Max', category: 'now', completed: false, dueDate: threeDaysFromNow.toISOString(), notes: 'Limping since Tuesday. Probably dramatic but maybe not.' },
+                    { id: '14', text: 'Renew car registration', category: 'now', completed: false, dueDate: oneDayFromNow.toISOString(), notes: 'Expired last week. Driving on borrowed time.' },
+                    { id: '15', text: 'Respond to landlord about lease renewal', category: 'now', completed: false, dueDate: threeDaysFromNow.toISOString(), notes: 'Need to decide by Friday or they lease to someone else.' }
+                ],
+                someday: [
+                    { id: '4', text: 'Organize garage', category: 'someday', completed: false, dueDate: fourteenDaysFromNow.toISOString(), notes: 'Donate old bikes, toss broken shelving.' },
+                    { id: '5', text: 'Schedule annual checkup', category: 'someday', completed: false, dueDate: sevenDaysFromNow.toISOString(), notes: '' },
+                    { id: '6', text: 'Update resume', category: 'someday', completed: false, dueDate: twentyOneDaysFromNow.toISOString(), notes: 'Add Q1 project results and new certifications.' },
+                    { id: '16', text: 'Start a side project portfolio', category: 'someday', completed: false, dueDate: twentyOneDaysFromNow.toISOString(), notes: 'Even a basic landing page would help. Stop overthinking it.' },
+                    { id: '17', text: 'Clean out the hall closet', category: 'someday', completed: false, dueDate: fourteenDaysFromNow.toISOString(), notes: 'Coats from 2019 are not coming back in style.' },
+                    { id: '18', text: 'Set up automatic savings transfer', category: 'someday', completed: false, dueDate: sevenDaysFromNow.toISOString(), notes: 'Even $50/month. Future you will be grateful.' },
+                    { id: '19', text: 'Cancel unused subscriptions', category: 'someday', completed: false, dueDate: tenDaysFromNow.toISOString(), notes: 'Still paying for three streaming services I never open.' },
+                    { id: '20', text: 'Meal prep on Sunday', category: 'someday', completed: false, dueDate: fiveDaysFromNow.toISOString(), notes: 'Even just lunches. Stop spending $15 a day on sad salads.' },
+                    { id: '21', text: 'Back up phone photos', category: 'someday', completed: false, dueDate: fourteenDaysFromNow.toISOString(), notes: 'Storage 97% full. One update away from disaster.' }
+                ],
+                forSomeReason: [
+                    { id: '7', text: 'Sort old emails', category: 'forSomeReason', completed: false, dueDate: fiveDaysFromNow.toISOString(), notes: '' },
+                    { id: '8', text: 'Rearrange desk for the 4th time', category: 'forSomeReason', completed: false, dueDate: tenDaysFromNow.toISOString(), notes: 'Maybe try the monitor on the left this time.' },
+                    { id: '22', text: 'Dust the ceiling fan', category: 'forSomeReason', completed: false, dueDate: fourteenDaysFromNow.toISOString(), notes: 'Has it ever been dusted? Unclear.' },
+                    { id: '23', text: 'Update LinkedIn headline', category: 'forSomeReason', completed: false, dueDate: sevenDaysFromNow.toISOString(), notes: 'Still says Aspiring Thought Leader from 2021.' },
+                    { id: '24', text: 'Return library books', category: 'forSomeReason', completed: false, dueDate: fiveDaysFromNow.toISOString(), notes: 'Three months overdue. The librarian knows my face.' },
+                    { id: '25', text: 'Fix the wobbly kitchen chair', category: 'forSomeReason', completed: false, dueDate: tenDaysFromNow.toISOString(), notes: 'One shim away from being furniture again.' }
+                ],
+                whyOnList: [
+                    { id: '9', text: 'Research best pencil brand', category: 'whyOnList', completed: false, dueDate: null, notes: '' },
+                    { id: '10', text: 'Reorganize sock drawer by color', category: 'whyOnList', completed: false, dueDate: null, notes: '' },
+                    { id: '26', text: 'Learn to fold a fitted sheet', category: 'whyOnList', completed: false, dueDate: null, notes: 'Nobody can actually do this. It is a myth.' },
+                    { id: '27', text: 'Compare phone plans for the 6th time', category: 'whyOnList', completed: false, dueDate: null, notes: 'Will save $4/month. Will take 3 hours of research.' },
+                    { id: '28', text: 'Alphabetize spice rack', category: 'whyOnList', completed: false, dueDate: null, notes: 'Peak avoidance behavior. The cumin is fine where it is.' },
+                    { id: '29', text: 'Read terms of service for anything', category: 'whyOnList', completed: false, dueDate: null, notes: 'Not a single human has ever done this. Move on.' },
+                    { id: '30', text: 'Create a color-coded filing system', category: 'whyOnList', completed: false, dueDate: null, notes: 'You have 4 documents total. This is not the Pentagon.' }
+                ],
+                squirrel: [
+                    { id: '31', text: 'Fixed the dripping faucet', category: 'squirrel', completed: false, dueDate: today.toISOString(), notes: 'Was not on any list but it was driving me insane.' },
+                    { id: '32', text: 'Helped neighbor carry groceries', category: 'squirrel', completed: false, dueDate: today.toISOString(), notes: 'Unplanned but felt good. Counts as cardio.' },
+                    { id: '33', text: 'Deep-cleaned the microwave', category: 'squirrel', completed: false, dueDate: today.toISOString(), notes: 'Started heating soup. Saw the crime scene inside. Had to act.' },
+                    { id: '34', text: 'Taught the kid to ride a bike', category: 'squirrel', completed: false, dueDate: today.toISOString(), notes: 'Was supposed to be working. Zero regrets.' },
+                    { id: '35', text: 'Found and returned lost wallet at store', category: 'squirrel', completed: false, dueDate: today.toISOString(), notes: 'Side quest completed. Real life XP earned.' }
+                ],
+                rewards: [],
+                reflection: []
+            });
+            const [brainDumpItems, setBrainDumpItems] = useState([]);
+            const [completedTasks, setCompletedTasks] = useState([]);
+            const [totalScore, setTotalScore] = useState(0);
+            const [streak, setStreak] = useState(0);
+            const [toast, setToast] = useState(null);
+            const [showResetModal, setShowResetModal] = useState(false);
+            const [resetTasks, setResetTasks] = useState([]);
+            const [brutalTruthIndex] = useState(() => Math.floor(Math.random() * 9));
+            const [startUglyActive, setStartUglyActive] = useState(null);
+            const [completionPopup, setCompletionPopup] = useState(null);
+            const [expandedBrainDumpId, setExpandedBrainDumpId] = useState(null);
+            const [editingTask, setEditingTask] = useState(null);
+            const [squirrelWarning, setSquirrelWarning] = useState(null);
+            const [calendarView, setCalendarView] = useState('month');
+            const [calendarDate, setCalendarDate] = useState(new Date());
+            const [donePointFilter, setDonePointFilter] = useState('all');
+
+            // Get today's tasks (not completed)
+            const getTodaysTasks = () => {
+                return [
+                    ...tasks.now.filter(t => !t.completed),
+                    ...tasks.someday.filter(t => !t.completed),
+                    ...tasks.forSomeReason.filter(t => !t.completed),
+                    ...tasks.whyOnList.filter(t => !t.completed)
+                ];
+            };
+
+            // Get top priority (first uncompleted "now" task)
+            const getTopPriority = () => {
+                return tasks.now.find(t => !t.completed);
+            };
+
+            // Calculate today's score
+            const getTodaysScore = () => {
+                return completedTasks
+                    .filter(t => {
+                        const today = new Date().toDateString();
+                        return new Date(t.completedAt).toDateString() === today;
+                    })
+                    .reduce((sum, t) => {
+                        const cat = Object.values(CATEGORIES).find(c => c.id === t.category);
+                        return sum + (cat?.points || 0);
+                    }, 0);
+            };
+
+            // Toggle task completion
+            const toggleTask = (taskId) => {
+                const allTasks = Object.values(tasks).flat();
+                const task = allTasks.find(t => t.id === taskId);
+
+                if (task) {
+                    if (!task.completed) {
+                        // Mark as completed
+                        const category = CATEGORIES[task.category];
+                        const points = category.points;
+
+                        setCompletedTasks([...completedTasks, { ...task, completedAt: new Date().toISOString() }]);
+                        setTotalScore(totalScore + points);
+                        setStreak(streak + 1);
+
+                        // Show completion popup
+                        const messages = {
+                            3: "You spent forty-five minutes on busywork and watched your score drop. Your brain goes, 'Well, that was dumb. Let's not do that again.'",
+                            2: "Someday just became today. The 'not today, Satan' pile gets lighter.",
+                            1: "You can't remember why, but it's done. Closure achieved. +1.",
+                            '-1': "You spent forty-five minutes on busywork and watched your score drop. Your brain goes, 'Well, that was dumb. Let's not do that again.'"
+                        };
+                        const message = points === 3 ? QUOTES[Math.floor(Math.random() * QUOTES.length)] : (messages[points] || QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+
+                        setCompletionPopup({
+                            task: task.text,
+                            category: category.name,
+                            points: points,
+                            message: message,
+                            emoji: category.emoji
+                        });
+                    }
+
+                    // Update task completion status
+                    setTasks({
+                        ...tasks,
+                        [task.category]: tasks[task.category].map(t =>
+                            t.id === taskId ? { ...t, completed: !t.completed } : t
+                        )
+                    });
+                }
+            };
+
+            // Delete task
+            const deleteTask = (taskId) => {
+                const allTasks = Object.values(tasks).flat();
+                const task = allTasks.find(t => t.id === taskId);
+
+                if (task) {
+                    setTasks({
+                        ...tasks,
+                        [task.category]: tasks[task.category].filter(t => t.id !== taskId)
+                    });
+                }
+            };
+
+            // Add task to category
+            const addTask = (category, text, dueDate = null, notes = '') => {
+                if (!text.trim()) return;
+
+                const newTask = {
+                    id: Date.now().toString(),
+                    text,
+                    category,
+                    completed: false,
+                    dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+                    notes: notes || ''
+                };
+
+                setTasks({
+                    ...tasks,
+                    [category]: [...tasks[category], newTask]
+                });
+
+                showToast('Task added to ' + CATEGORIES[category].name);
+            };
+
+            const updateTask = (taskId, updates) => {
+                const newTasks = {...tasks};
+                for (const cat of Object.keys(newTasks)) {
+                    const idx = newTasks[cat].findIndex(t => t.id === taskId);
+                    if (idx !== -1) {
+                        const oldTask = newTasks[cat][idx];
+                        const updatedTask = {...oldTask, ...updates};
+                        // If category changed, move the task
+                        if (updates.category && updates.category !== cat) {
+                            newTasks[cat] = newTasks[cat].filter(t => t.id !== taskId);
+                            newTasks[updates.category] = [...newTasks[updates.category], updatedTask];
+                        } else {
+                            newTasks[cat][idx] = updatedTask;
+                        }
+                        setTasks(newTasks);
+                        return;
+                    }
+                }
+            };
+
+            // Show toast
+            const showToast = (message) => {
+                setToast(message);
+                setTimeout(() => setToast(null), 3000);
+            };
+
+            // Calculate stats
+            const tasksThisWeek = completedTasks.filter(t => {
+                const taskDate = new Date(t.completedAt);
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                return taskDate >= weekAgo;
+            });
+
+            const noiseDeleted = tasks.whyOnList.filter(t => t.completed).length;
+
+            const frogsEaten = completedTasks.filter(t => t.category === 'now').length;
+
+            // Open reset modal
+            const openResetModal = () => {
+                const incomplete = Object.values(tasks)
+                    .flat()
+                    .filter(t => !t.completed && t.category !== 'squirrel' && t.category !== 'rewards' && t.category !== 'reflection');
+                setResetTasks(incomplete);
+                setShowResetModal(true);
+            };
+
+            // Handle reset actions
+            const handleResetAction = (taskId, action) => {
+                const task = resetTasks.find(t => t.id === taskId);
+                if (!task) return;
+
+                if (action === 'keep') {
+                    setResetTasks(resetTasks.filter(t => t.id !== taskId));
+                } else if (action === 'reschedule') {
+                    setResetTasks(resetTasks.filter(t => t.id !== taskId));
+                } else if (action === 'kill') {
+                    deleteTask(taskId);
+                    setResetTasks(resetTasks.filter(t => t.id !== taskId));
+                }
+            };
+
+            // Get category color for done items
+            const getCategoryColor = (categoryId) => {
+                const colors = {
+                    now: '#ef4444',
+                    someday: '#f59e0b',
+                    forSomeReason: '#8b5cf6',
+                    whyOnList: '#6366f1',
+                    squirrel: '#06b6d4'
+                };
+                return colors[categoryId] || '#999';
+            };
+
+            // ============================================================
+            // WEIRD NEWS CONFIG - Update this section with new stories
+            // The app randomly picks 6 of these 25 stories on each reload
+            // To refresh: add/remove/edit entries in the array below
+            // ============================================================
+            const ALL_WEIRD_NEWS = [
+                { emoji: '🚀🚽', topText: 'ARTEMIS II LAUNCHES TO THE MOON', bottomText: 'TOILET IMMEDIATELY REJECTS ALL ASTRONAUT PEE', source: 'NASA had to walk them through a plumbing fix from 240,000 miles away', url: 'https://www.cnn.com/2026/04/04/science/artemis-2-toilet-malfunction', bg: '#1a1a2e' },
+                { emoji: '🐊🚗', topText: 'TWO FLORIDA MEN CHARGED', bottomText: 'FOR DRIVING WITH A DEAD GATOR ON THE ROOF', source: 'Anthony Buhl, 56, and March Chadwick, 57 - Florida never disappoints', url: 'https://www.fox35orlando.com/news/tourists-charged-after-hauling-dead-alligator-strapped-roof-car', bg: '#2d1810' },
+                { emoji: '🍫💀', topText: '400,000 KIT-KATS STOLEN IN EUROPE', bottomText: 'THEY WERE SPECIAL F1 CAR-SHAPED ONES', source: 'Heisted in transit from Italy to Poland - break me off a piece of that crime spree', url: 'https://www.nbcnews.com/world/europe/kitkat-candy-bars-stolen-en-route-italy-poland-nestle-says-rcna265621', bg: '#1a2e1a' },
+                { emoji: '👕🏃', topText: 'WOMAN RUNS HALF MARATHON', bottomText: 'WEARING 55 T-SHIRTS AT ONCE', source: 'Meredith Smith of Arkansas broke a Guinness World Record', url: 'https://www.guinnessworldrecords.com/news/2026/4/us-woman-runs-half-marathon-in-55-shirts-to-set-record-and-symbolize-weight-loss-journey', bg: '#2e1a2e' },
+                { emoji: '🦃💨', topText: 'OSTRICH ESCAPES CAFE IN THAILAND', bottomText: 'RUNS 10 MILES DOWN A BUSY HIGHWAY', source: 'The bird named B1 was eventually captured safely - no tickets issued', url: 'https://www.upi.com/Odd_News/2026/04/08/thailand-ostrich-escape-highway-run/7351775658293/', bg: '#0d2137' },
+                { emoji: '🚗🏔️', topText: 'SOMEONE HUNG A VW BEETLE', bottomText: 'OFF THE SIDE OF A CLIFF IN CANADA', source: 'UBC engineering students claimed credit for the Squamish rock face prank', url: 'https://www.cbc.ca/news/canada/british-columbia/volkswagen-beetle-removed-squamish-rock-face-9.7157153', bg: '#2e2e1a' },
+                { emoji: '🦊🚢', topText: 'FOX STOWS AWAY ON CARGO SHIP', bottomText: 'CROSSES THE ATLANTIC FROM ENGLAND TO NYC', source: 'The 11-pound fox is now living at the Bronx Zoo', url: 'https://www.nbcnews.com/news/animal-news/red-fox-somehow-slipped-cargo-ship-traveled-southampton-england-new-yo-rcna263111', bg: '#1e3a2f' },
+                { emoji: '⛪🃏', topText: 'PITTSBURGH PRIEST CAUGHT STEALING', bottomText: '$1,000 IN BASEBALL CARDS FROM WALMART', source: 'Security footage showed him stealing cards on 5 consecutive days', url: 'https://www.nbcnews.com/news/us-news/priest-episcopal-pittsburgh-stealing-baseball-card-rcna263069', bg: '#2a1a30' },
+                { emoji: '🦓🌩️', topText: 'ZEBRA NAMED ZEUS ESCAPES', bottomText: 'ROAMS CALIFORNIA NEIGHBORHOOD AFTER STORM', source: 'Spooked by thunder. Captured near Old Highway 65. Yes you can legally own a zebra in CA.', url: 'https://www.upi.com/Odd_News/2026/04/12/zebra-loose-california/7561776039875/', bg: '#1a2a3e' },
+                { emoji: '🦘📚', topText: 'WALLABY HOPS THROUGH OHIO COLLEGE', bottomText: 'LEADS POLICE ON HOUR-LONG CAMPUS CHASE', source: 'Skippy escaped during a vet tech demo. Drones were deployed.', url: 'https://www.upi.com/Odd_News/2026/04/10/Dayton-Sinclair-Community-College-wallaby-Skippy/5541775837273/', bg: '#2e1a1e' },
+                { emoji: '🐦‍⬛🏃', topText: 'REPEAT-OFFENDER EMU ESCAPES AGAIN', bottomText: 'WALTER THE EMU WRANGLED IN MASSACHUSETTS', source: 'A cop recognized the bird because it belongs to his dad. Classic Walter.', url: 'https://www.upi.com/Odd_News/2026/04/10/escaped-emu-Walter-Barnstable-Massachusetts/8871775834916/', bg: '#1a2e2e' },
+                { emoji: '🎃🔪', topText: '254 PEOPLE DRESS AS MICHAEL MYERS', bottomText: 'BREAK GUINNESS WORLD RECORD AT PAX EAST', source: 'Blue coveralls and Shatner masks everywhere. Halloween game promo in Boston.', url: 'https://www.upi.com/Odd_News/2026/04/08/Guinness-World-Records-Halloween-Michael-Myers/8781775660542/', bg: '#2e1a0e' },
+                { emoji: '🐳🐛', topText: 'NEW TERMITE LOOKS LIKE A SPERM WHALE', bottomText: 'NAMED CRYPTOTERMES MOBYDICKI (SERIOUSLY)', source: 'Found in a dead tree 8 meters up in a South American rainforest canopy', url: 'https://www.sciencedaily.com/releases/2026/04/260401071943.htm', bg: '#0e2e2e' },
+                { emoji: '🦕🇰🇷', topText: 'BABY DINOSAUR FOUND IN SOUTH KOREA', bottomText: 'NAMED AFTER A CARTOON CHARACTER', source: 'Doolysaurus huhmin was turkey-sized, 113 million years old, and probably fuzzy', url: 'https://www.nhm.ac.uk/discover/news/2026/march/new-species-of-south-korea-dinosaur-named-after-famous-south-korean-cartoon.html', bg: '#2a2a1a' },
+                { emoji: '🎰🍀', topText: 'MAN BUYS FIRST LOTTERY TICKET EVER', bottomText: 'WINS $50,000 ON A $5 SCRATCH-OFF', source: 'Was a lottery skeptic. Bought it after watching someone else win $400.', url: 'https://www.upi.com/Odd_News/2026/04/08/lotto-Maryland-Lottery-beginners-luck/8891775670378/', bg: '#1e2e1a' },
+                { emoji: '🐱💔', topText: 'CAT MISSING FOR 5 YEARS FOUND', bottomText: 'MICROCHIP REUNITES HER WITH FAMILY', source: 'KitKat the cat vanished in 2021. Shelter scanned the chip. Tears ensued.', url: 'https://www.upi.com/Odd_News/2026/04/09/missing-cat-five-years-Williamson-County-Texas/3061775747306/', bg: '#2e1a2a' },
+                { emoji: '🎰💰', topText: 'WOMAN WINS $100K LOTTERY PRIZE', bottomText: '14 YEARS AFTER WINNING $50K', source: 'Cheryl was on her way to bingo when she bought the winning scratch-off', url: 'https://www.upi.com/Odd_News/2026/04/09/lotto-Maryland-Lottery-second-win-14-years/3291775746287/', bg: '#1a1a2a' },
+                { emoji: '🛳️🤷', topText: 'MYSTERY BARGE FLOATS DOWN RIVER', bottomText: 'HITS TWO BRIDGES BEFORE ANYONE KNOWS WHY', source: 'Turned out it escaped a construction project in Battle Creek, Michigan', url: 'https://www.upi.com/Odd_News/2026/04/09/Kalamazoo-River-Battle-Creek-mystery-barge/1971775748447/', bg: '#1e1e2e' },
+                { emoji: '✈️😐', topText: 'RYANAIR ANNOUNCES PROFESSIONAL TONE', bottomText: 'INTERNET IMMEDIATELY CALLS IT AN APRIL FOOLS PRANK', source: 'They posted it March 31. Iceland Cricket roasted them. 51 memes in 3 hours.', url: 'https://simpleflying.com/ryanair-ends-trolling-professional-rebrand-april-fools/', bg: '#2e2a1a' },
+                { emoji: '🐹🇵🇱', topText: 'CENTRAL AMERICAN RODENT SPOTTED', bottomText: 'BY A JOGGER IN POLAND', source: 'An agouti - basically a giant guinea pig - had escaped captivity in Rybnik', url: 'https://www.upi.com/Odd_News/2026/04/10/poland-escaped-agouti-Rybnik/6131775835628/', bg: '#2e1e2e' },
+                { emoji: '🍕📦', topText: 'KEEBLER ANNOUNCES TOOTHPASTE', bottomText: 'APRIL FOOLS PRANK GOES VIRAL', source: 'Cookie-flavored dental care. People actually wanted to buy it.', url: 'https://www.upi.com/Odd_News/2026/04/01/April-Fools-Day-2026-roundup/3911775049171/', bg: '#1a2a1a' },
+                { emoji: '🐵🫖', topText: 'BONOBO PLAYS ALONG AT TEA PARTY', bottomText: 'TRACKS IMAGINARY JUICE LIKE IT IS REAL', source: 'Kanzi the bonobo surprised scientists by pretending with invisible grapes', url: 'https://www.sciencedaily.com/news/strange_offbeat/', bg: '#2a1e2a' },
+                { emoji: '👟🏆', topText: 'UGG ANNOUNCES RAIN UMBRELLA', bottomText: 'SHAPED LIKE A GIANT UGG BOOT', source: 'April Fools product that honestly should be real', url: 'https://www.upi.com/Odd_News/2026/04/01/April-Fools-Day-2026-roundup/3911775049171/', bg: '#2e2e2a' },
+                { emoji: '🏎️🏠', topText: 'FAST FOOD CHAIN OPENS REVERSE DRIVE-THROUGH', bottomText: 'CUSTOMERS WALK. CARS DRIVE INSIDE.', source: 'April Fools ad featured confused actors in tiny cars inside the restaurant', url: 'https://www.upi.com/Odd_News/2026/04/01/April-Fools-Day-2026-roundup/3911775049171/', bg: '#1e2a2e' },
+                { emoji: '📱🤦', topText: 'PEOPLE ANNOUNCE FAKE LIFE UPDATES', bottomText: 'REVEAL THEY JUST CHANGED THEIR WIFI PASSWORD', source: 'The most relatable April Fools trend of 2026', url: 'https://www.upi.com/Odd_News/2026/04/01/April-Fools-Day-2026-roundup/3911775049171/', bg: '#2a2e1a' }
+            ];
+
+            const [selectedMemeIndices] = useState(() => {
+                const indices = [];
+                const pool = [...Array(ALL_WEIRD_NEWS.length).keys()];
+                for (let i = 0; i < 6 && pool.length > 0; i++) {
+                    const pick = Math.floor(Math.random() * pool.length);
+                    indices.push(pool.splice(pick, 1)[0]);
+                }
+                return indices;
+            });
+
+            const WEIRD_NEWS_TABS = ['today', 'matrix', 'braindump', 'done', 'calendar', 'wins'];
+            const getNewsForTab = (tabName) => {
+                const idx = WEIRD_NEWS_TABS.indexOf(tabName);
+                if (idx === -1 || idx >= selectedMemeIndices.length) return null;
+                return ALL_WEIRD_NEWS[selectedMemeIndices[idx]];
+            };
+            // ============================================================
+            // END WEIRD NEWS CONFIG
+            // ============================================================
+
+            // ============================================================
+            // SQUIRREL WARNINGS - 50 humorous distraction warnings
+            // Add, remove, or edit entries anytime. The app picks one at random.
+            // ============================================================
+            const SQUIRREL_WARNINGS = [
+                { emoji: '🐿️', title: 'SQUIRREL!', message: "You're about to chase a squirrel down a news hole. That's time you'll never get back. Your to-do list is watching. It's judging." },
+                { emoji: '🕳️', title: 'RABBIT HOLE DETECTED', message: "This link leads to a rabbit hole. You'll click it, read the article, then read three more, then wonder where your afternoon went." },
+                { emoji: '🧲', title: 'DISTRACTION MAGNET ACTIVATED', message: "Your brain just spotted something shiny and wants to abandon all responsibilities. This is exactly how the sock drawer gets reorganized instead of the taxes getting filed." },
+                { emoji: '🪤', title: "IT'S A TRAP", message: "Weird news is the junk food of productivity. Delicious? Yes. Nutritious? Absolutely not. Your matrix does not include this as a priority." },
+                { emoji: '🌀', title: 'ENTERING THE VORTEX', message: "One click leads to another. Before you know it, you're deep in a Wikipedia spiral about Florida Man and it's somehow 4pm." },
+                { emoji: '🎪', title: 'WELCOME TO THE CIRCUS', message: "Step right up! Trade your productivity for entertainment! Watch as your carefully planned day dissolves into a blur of bizarre headlines!" },
+                { emoji: '🧠', title: 'YOUR BRAIN IS LYING TO YOU', message: "It's telling you this is a 'quick break.' It's never a quick break. That's like saying you'll eat just one chip. We both know how this ends." },
+                { emoji: '💀', title: 'R.I.P. YOUR MOMENTUM', message: "You were on a roll. Tasks were getting done. Points were stacking. And now you want to read weird news? This is why we can't have nice streaks." },
+                { emoji: '🎰', title: 'PULLING THE PROCRASTINATION LEVER', message: "Congratulations, you've found the slot machine of avoidance. Each click feels rewarding but produces absolutely nothing of value." },
+                { emoji: '🚨', title: 'PRODUCTIVITY POLICE', message: "Do you know how fast you were scrolling away from your responsibilities? Step away from the weird news and return to your matrix." },
+                { emoji: '🍩', title: 'DONUT OF DISTRACTION', message: "This article is a glazed donut for your brain. Sweet, empty, and you'll regret it in about 12 minutes when you've accomplished exactly nothing." },
+                { emoji: '🏴‍☠️', title: 'ATTENTION HIJACKED', message: "Pirates have boarded your focus ship. They're stealing your most valuable cargo: time. You can fight back, or you can surrender to weird news." },
+                { emoji: '🪞', title: 'MIRROR CHECK', message: "Look at yourself. You had a plan. A beautiful, productive plan. And now you're about to throw it all away for an article about... this. Really?" },
+                { emoji: '🦥', title: 'INNER SLOTH ACTIVATED', message: "Your inner sloth just woke up, stretched, and whispered 'click it.' Don't listen to the sloth. The sloth has never filed taxes on time." },
+                { emoji: '🧊', title: 'MOMENTUM: FROZEN', message: "Your productivity was a beautiful flowing river and you're about to build a dam out of weird news articles. The river will not thank you." },
+                { emoji: '🎭', title: 'COMEDY VS. PRODUCTIVITY', message: "In the eternal battle between getting things done and reading about absurd nonsense, absurd nonsense has a suspiciously high win rate." },
+                { emoji: '🛸', title: 'ABDUCTION IN PROGRESS', message: "Aliens are abducting your attention. They'll return you in 20 minutes with no memory of your goals and a head full of useless trivia." },
+                { emoji: '🍕', title: 'JUST ONE SLICE', message: "You're telling yourself you'll just read one article. Nobody reads just one article. That's like eating one slice of pizza at midnight." },
+                { emoji: '🏗️', title: 'DEMOLITION NOTICE', message: "The productive day you were building is now a demolition site. Hard hat required. Cause of collapse: clicking on weird news like a rookie." },
+                { emoji: '🧟', title: 'ZOMBIE MODE ENGAGED', message: "Your brain is switching to zombie mode: mindlessly consuming content with no nutritional value. The cure is closing this and doing actual work." },
+                { emoji: '🎢', title: 'PROCRASTINATION ROLLERCOASTER', message: "Buckle up. First it's one article. Then it's 'just one more.' Then it's 6pm and you're reading about competitive cheese rolling." },
+                { emoji: '🔮', title: 'FORTUNE TELLER SAYS...', message: "I see your future: 25 minutes of weird news, 5 minutes of guilt, then frantically trying to catch up on everything you should have done." },
+                { emoji: '🐒', title: 'MONKEY BRAIN WINS AGAIN', message: "Your monkey brain wants entertainment. Your rational brain wants productivity. Monkey brain is undefeated. Today could be different. Probably won't be." },
+                { emoji: '🧨', title: 'FOCUS BOMB DETECTED', message: "This link is a ticking focus bomb. Click it and your concentration explodes into a million pieces of 'what was I supposed to be doing?'" },
+                { emoji: '🗑️', title: 'FILING THIS UNDER...', message: "If this article were a task, it would land squarely in the 'Why Is This On My List?' category. And yet here you are, about to click it." },
+                { emoji: '🐑', title: 'FOLLOWING THE HERD', message: "Millions of people are also procrastinating by reading this. You could be the one person who didn't. Be the statistical anomaly. Be the hero." },
+                { emoji: '⏰', title: 'TIME THEFT IN PROGRESS', message: "You are about to steal time from your future self. Future you will not be grateful. Future you will be stressed and behind on everything." },
+                { emoji: '🪂', title: 'BAILING OUT', message: "You're parachuting out of your productive flow state into the wilderness of random internet content. Landing zone: regret." },
+                { emoji: '🍿', title: 'GETTING THE POPCORN', message: "Sure, settle in. Read the article. Enjoy the show. Meanwhile, your to-do list is in the other room, silently growing, plotting revenge." },
+                { emoji: '🏃', title: 'RUNNING FROM TASKS', message: "You're not reading news. You're running. Running from the matrix, running from the points, running from the beautiful productive day that could have been." },
+                { emoji: '🧲', title: 'CLICKBAIT MAGNETISM', message: "You've been magnetically drawn to clickbait. This is not a personality flaw. It's a feature. A terrible, unproductive feature." },
+                { emoji: '🌊', title: 'SURFING THE WRONG WAVE', message: "You were supposed to be riding the wave of productivity. Instead you're surfing weird news. Same ocean, very different destinations." },
+                { emoji: '🐸', title: 'EAT THE FROG. NOT THIS.', message: "The book says eat the frog first. This article is not the frog. This is the candy you eat to avoid the frog. The frog is still waiting." },
+                { emoji: '🎯', title: 'OFF TARGET', message: "Your aim was so good today. Tasks were falling. Points were rising. And now you're pointing your attention at... this. Recalibrate, soldier." },
+                { emoji: '🛋️', title: 'COUCH POTATO PROTOCOL', message: "Your brain is trying to activate Couch Potato Protocol. Symptoms include: reading weird news, forgetting priorities, and a vague sense of guilt." },
+                { emoji: '🦜', title: 'POLLY WANTS A DISTRACTION', message: "Polly wants a cracker and you want to waste time. At least Polly has an excuse - she's a parrot. What's yours?" },
+                { emoji: '🔥', title: "YOUR STREAK CALLED", message: "It said 'please don't do this to me.' Your streak was growing. It was beautiful. Don't let a weird news article be the thing that kills it." },
+                { emoji: '🤡', title: 'CLOWN CREDENTIALS DETECTED', message: "Reading weird news during peak productivity hours is certified clown behavior. The matrix sees all. The scoreboard remembers." },
+                { emoji: '🏖️', title: 'MENTAL VACATION REQUEST', message: "Your brain has submitted a vacation request in the form of clicking on weird news. Request status: DENIED. Get back to work." },
+                { emoji: '🐌', title: 'PACE: GLACIAL', message: "At this rate, you'll finish your to-do list sometime in the next geological epoch. But sure, read about the ostrich first." },
+                { emoji: '🪁', title: 'GONE WITH THE WIND', message: "Your focus was a kite, soaring high and beautiful. Then the wind of weird news caught it. Now it's stuck in a tree. Good luck with that." },
+                { emoji: '🧩', title: 'MISSING PIECE', message: "Your day was a beautiful puzzle coming together. This article is the piece from a completely different puzzle. It won't fit. Stop trying." },
+                { emoji: '📺', title: 'CHANNEL SURFING', message: "You just changed the channel from 'Getting Things Done' to 'Random Stuff That Won't Matter Tomorrow.' Bold programming choice." },
+                { emoji: '🦷', title: 'CAVITY FOR YOUR BRAIN', message: "This is a mental cavity. Feels fine now, hurts later. Your brain dentist would not approve. Floss your priorities instead." },
+                { emoji: '⚓', title: 'ANCHOR DROPPED', message: "You just dropped anchor in the harbor of procrastination. It's calm here. It's comfortable. But your ship was supposed to be going somewhere." },
+                { emoji: '🎪', title: 'SIDESHOW ATTRACTION', message: "Step right up to the sideshow! Watch a grown adult abandon their carefully planned day for a headline about something completely irrelevant!" },
+                { emoji: '🏺', title: 'PANDORA SAYS HI', message: "Opening this article is like opening Pandora's box. Except instead of unleashing evil, you're unleashing a 30-minute procrastination spiral." },
+                { emoji: '🧃', title: 'BRAIN JUICE WASTED', message: "You have a finite amount of brain juice each day. You're about to pour some into the drain of weird news. Your +3 tasks are parched." },
+                { emoji: '🪵', title: 'LOG JAM', message: "Your productive flow is now a log jam. The log? This article. Remove the log and the river flows again. Or add more logs. Your call." },
+                { emoji: '🎻', title: 'WORLD\'S SMALLEST VIOLIN', message: "It's playing for your abandoned to-do list. All those tasks, sitting there, waiting, hoping you'd come back. But no. You chose weird news." }
+            ];
+            // ============================================================
+            // END SQUIRREL WARNINGS
+            // ============================================================
+
+            const handleMemeClick = (meme) => {
+                const warning = SQUIRREL_WARNINGS[Math.floor(Math.random() * SQUIRREL_WARNINGS.length)];
+                setSquirrelWarning({ ...warning, url: meme.url });
+            };
+
+            const handleSquirrelContinue = () => {
+                const url = squirrelWarning.url;
+                setTotalScore(totalScore - 1);
+                setSquirrelWarning(null);
+                showToast('-1 point. Worth it? Probably not.');
+                window.open(url, '_blank');
+            };
+
+            function MemeBanner({ viewName }) {
+                const meme = getNewsForTab(viewName);
+                if (!meme) return null;
+
+                return (
+                    <div
+                        onClick={() => handleMemeClick(meme)}
+                        style={{
+                            background: meme.bg,
+                            borderRadius: '12px',
+                            padding: '16px 20px',
+                            marginBottom: '16px',
+                            textAlign: 'center',
+                            borderTop: '4px solid #f5c518',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            cursor: 'pointer',
+                            transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.01)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,197,24,0.25)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    >
+                        <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '2px', color: '#f5c518', opacity: 0.8, marginBottom: '8px', textTransform: 'uppercase' }}>
+                            Weird News of the Week
+                        </div>
+                        <div style={{ fontSize: '36px', marginBottom: '10px', lineHeight: 1 }}>
+                            {meme.emoji}
+                        </div>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: 'white', fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", letterSpacing: '0.3px', marginBottom: '6px', lineHeight: 1.3 }}>
+                            {meme.topText}
+                        </div>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#f5c518', fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", letterSpacing: '0.2px', marginBottom: '12px', lineHeight: 1.3 }}>
+                            {meme.bottomText}
+                        </div>
+                        <div style={{ width: '200px', height: '1px', background: 'rgba(255,255,255,0.15)', margin: '0 auto 8px' }}></div>
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px', lineHeight: 1.4 }}>
+                            {meme.source}
+                        </div>
+                        <div style={{ fontSize: '9px', color: '#f5c518', opacity: 0.4, marginTop: '4px' }}>
+                            Tap to read full story (if you dare)
+                        </div>
+                    </div>
+                );
+            }
+
+            // Show review popup after 60 seconds if logged in and hasn't reviewed
+            React.useEffect(() => {
+                if (isLoggedIn && !hasReviewed && !showReviewPopup) {
+                    const timer = setTimeout(() => setShowReviewPopup(true), 60000);
+                    return () => clearTimeout(timer);
+                }
+            }, [isLoggedIn, hasReviewed]);
+
+            if (!isLoggedIn) {
+                return (
+                    <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#f5f0e6' }}>
+                        <div style={{ width: '100%', maxWidth: '400px', padding: '40px 24px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '48px', fontWeight: 900, color: '#1a1a1a', marginBottom: '4px' }}>GSD</div>
+                            <div style={{ fontSize: '16px', fontWeight: 700, color: '#666', marginBottom: '32px' }}>Get. Sh*t. Done.</div>
+
+                            {loginStep === 'email' && (
+                                <div>
+                                    <div style={{ fontSize: '14px', color: '#444', marginBottom: '20px', lineHeight: 1.5 }}>
+                                        Enter your email to get started. We will send you a confirmation link.
+                                    </div>
+                                    <input
+                                        type="email"
+                                        placeholder="your@email.com"
+                                        value={loginEmail}
+                                        onChange={(e) => setLoginEmail(e.target.value)}
+                                        style={{ width: '100%', padding: '14px 16px', border: '2px solid #ddd', borderRadius: '10px', fontSize: '16px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box', textAlign: 'center' }}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter' && loginEmail.includes('@')) setLoginStep('confirm');
+                                        }}
+                                    />
+                                    <button
+                                        onClick={() => { if (loginEmail.includes('@')) setLoginStep('confirm'); }}
+                                        style={{ width: '100%', padding: '14px', background: '#f5c518', color: '#1a1a1a', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '16px', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '1px' }}
+                                    >
+                                        Send Confirmation Link
+                                    </button>
+                                </div>
+                            )}
+
+                            {loginStep === 'confirm' && (
+                                <div>
+                                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>📧</div>
+                                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#1a1a1a', marginBottom: '8px' }}>Check Your Email</div>
+                                    <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px', lineHeight: 1.5 }}>
+                                        We sent a confirmation link to:
+                                    </div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a', marginBottom: '24px' }}>{loginEmail}</div>
+                                    <div style={{ fontSize: '12px', color: '#999', marginBottom: '24px' }}>
+                                        (For this prototype, just click the button below)
+                                    </div>
+                                    <button
+                                        onClick={() => { setLoginStep('done'); setIsLoggedIn(true); }}
+                                        style={{ width: '100%', padding: '14px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '16px', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '1px' }}
+                                    >
+                                        I Confirmed My Email
+                                    </button>
+                                    <button
+                                        onClick={() => setLoginStep('email')}
+                                        style={{ width: '100%', padding: '10px', background: 'transparent', color: '#666', border: 'none', fontSize: '13px', cursor: 'pointer', marginTop: '12px' }}
+                                    >
+                                        Use a different email
+                                    </button>
+                                </div>
+                            )}
+
+                            <div style={{ marginTop: '40px', fontSize: '11px', color: '#aaa' }}>
+                                Based on the book by Knute Steel
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="app-container">
+                    {/* Navigation Bar */}
+                    <nav className="nav-bar">
+                        <button
+                            className={`nav-tab ${currentView === 'today' ? 'active' : ''}`}
+                            onClick={() => setCurrentView('today')}
+                        >
+                            Today
+                        </button>
+                        <button
+                            className={`nav-tab ${currentView === 'matrix' ? 'active' : ''}`}
+                            onClick={() => setCurrentView('matrix')}
+                        >
+                            Matrix
+                        </button>
+                        <button
+                            className={`nav-tab ${currentView === 'braindump' ? 'active' : ''}`}
+                            onClick={() => setCurrentView('braindump')}
+                        >
+                            Brain Dump
+                        </button>
+                        <button
+                            className={`nav-tab ${currentView === 'done' ? 'active' : ''}`}
+                            onClick={() => setCurrentView('done')}
+                        >
+                            Done
+                        </button>
+                        <button
+                            className={`nav-tab ${currentView === 'calendar' ? 'active' : ''}`}
+                            onClick={() => setCurrentView('calendar')}
+                        >
+                            Calendar
+                        </button>
+                        <button
+                            className={`nav-tab ${currentView === 'wins' ? 'active' : ''}`}
+                            onClick={() => setCurrentView('wins')}
+                        >
+                            Wins
+                        </button>
+                        <button
+                            className={`nav-tab ${currentView === 'reviews' ? 'active' : ''}`}
+                            onClick={() => setCurrentView('reviews')}
+                        >
+                            Reviews
+                        </button>
+                        {loginEmail.trim().toLowerCase() === 'knutesteel@gmail.com' && (
+                            <button
+                                className={`nav-tab ${currentView === 'admin' ? 'active' : ''}`}
+                                onClick={() => setCurrentView('admin')}
+                                style={{ background: currentView === 'admin' ? '#f5c518' : '#2a2a2a', color: currentView === 'admin' ? '#000' : '#f5c518', fontWeight: 700 }}
+                            >
+                                🔐 Admin
+                            </button>
+                        )}
+                    </nav>
+
+                    {/* Scoreboard Bar */}
+                    <div className="scoreboard-bar">
+                        <div className="scoreboard-item">
+                            <div className="scoreboard-value">{getTodaysScore()}</div>
+                            <div className="scoreboard-label">Today</div>
+                        </div>
+                        <div className="scoreboard-item">
+                            <div className="scoreboard-value">{totalScore}</div>
+                            <div className="scoreboard-label">Total</div>
+                        </div>
+                        <div className="scoreboard-item">
+                            <div className="scoreboard-value">{tasksThisWeek.length}</div>
+                            <div className="scoreboard-label">Done</div>
+                        </div>
+                        <div className="scoreboard-item">
+                            <div className="scoreboard-value">{streak}</div>
+                            <div className="scoreboard-label">Streak</div>
+                        </div>
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="content-area">
+                        {currentView === 'today' && <TodayView />}
+                        {currentView === 'matrix' && <MatrixView />}
+                        {currentView === 'braindump' && <BrainDumpView />}
+                        {currentView === 'done' && <DoneView />}
+                        {currentView === 'calendar' && <CalendarView />}
+                        {currentView === 'wins' && <WinsView />}
+                        {currentView === 'reviews' && <ReviewsView />}
+                        {currentView === 'admin' && loginEmail.trim().toLowerCase() === 'knutesteel@gmail.com' && <AdminView />}
+                    </div>
+
+                    {showReviewPopup && (
+                        <div className="completion-overlay" onClick={() => setShowReviewPopup(false)}>
+                            <div className="completion-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                                <div className="completion-emoji">📖⭐</div>
+                                <div style={{ fontSize: '20px', fontWeight: 800, color: '#1a1a1a', marginBottom: '8px' }}>Love Getting Sh*t Done?</div>
+                                <div style={{ fontSize: '14px', color: '#444', lineHeight: 1.5, marginBottom: '12px', padding: '0 8px' }}>
+                                    Leave a review for the book on Amazon and earn <strong>+5 bonus points</strong>! Plus, the best review each week wins bragging rights and eternal glory.
+                                </div>
+                                <div style={{ background: '#fff8e1', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '12px', color: '#666' }}>
+                                    🏆 <strong>Weekly Contest:</strong> Best review wins. Voting happens in the Reviews tab.
+                                </div>
+                                <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                                    <button onClick={() => setShowReviewPopup(false)} style={{
+                                        flex: 1, padding: '12px', background: '#e0e0e0', color: '#333',
+                                        border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '13px',
+                                        cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px'
+                                    }}>
+                                        Maybe Later
+                                    </button>
+                                    <button onClick={() => {
+                                        setTotalScore(totalScore + 5);
+                                        setHasReviewed(true);
+                                        setShowReviewPopup(false);
+                                        showToast('+5 points! Thanks for reviewing!');
+                                        window.open('https://www.amazon.com/Stop-Getting-Distracted-Your-Done/dp/B0FVF9HNYX/ref=sr_1_1?crid=1FE9VG0XP9PG6&dib=eyJ2IjoiMSJ9.W3tLZvMJxJrdFmM1pHOKdVKI8405D7NOzZDU_DQnNso.v-hFT8bI9A9GJAG7AqUTRIMsCMpDW_DWq-fW1CInRr8&dib_tag=se&keywords=knute+steel&qid=1776094538&sprefix=knute+steel%2Caps%2C150&sr=8-1', '_blank');
+                                    }} style={{
+                                        flex: 1, padding: '12px', background: '#f5c518', color: '#1a1a1a',
+                                        border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '13px',
+                                        cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px'
+                                    }}>
+                                        Review (+5 pts)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {squirrelWarning && (
+                        <div className="completion-overlay" onClick={() => setSquirrelWarning(null)}>
+                            <div className="completion-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '380px' }}>
+                                <div className="completion-emoji">{squirrelWarning.emoji}</div>
+                                <div className="completion-points negative" style={{ fontSize: '14px', letterSpacing: '1px' }}>-1 POINT WARNING</div>
+                                <div style={{ fontSize: '20px', fontWeight: 800, color: '#1a1a1a', marginBottom: '12px' }}>{squirrelWarning.title}</div>
+                                <div style={{ fontSize: '14px', color: '#444', lineHeight: 1.5, marginBottom: '20px', padding: '0 8px' }}>{squirrelWarning.message}</div>
+                                <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                                    <button onClick={() => setSquirrelWarning(null)} style={{
+                                        flex: 1, padding: '12px', background: '#22c55e', color: 'white',
+                                        border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '13px',
+                                        cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px'
+                                    }}>
+                                        Back to Work
+                                    </button>
+                                    <button onClick={handleSquirrelContinue} style={{
+                                        flex: 1, padding: '12px', background: '#ef4444', color: 'white',
+                                        border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '13px',
+                                        cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px'
+                                    }}>
+                                        Worth It (-1 pt)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {editingTask && (
+                        <div className="edit-modal-overlay" onClick={() => setEditingTask(null)}>
+                            <div className="edit-modal" onClick={(e) => e.stopPropagation()}>
+                                <h3>Edit Task</h3>
+                                <label>Task Name</label>
+                                <input
+                                    type="text"
+                                    value={editingTask.text}
+                                    onChange={(e) => setEditingTask({...editingTask, text: e.target.value})}
+                                />
+                                <label>Notes</label>
+                                <textarea
+                                    value={editingTask.notes || ''}
+                                    onChange={(e) => setEditingTask({...editingTask, notes: e.target.value})}
+                                    placeholder="Add notes..."
+                                />
+                                <label>Category</label>
+                                <select
+                                    value={editingTask.category}
+                                    onChange={(e) => setEditingTask({...editingTask, category: e.target.value})}
+                                >
+                                    {Object.entries(CATEGORIES).filter(([key]) => key !== 'rewards' && key !== 'reflection').map(([key, cat]) => (
+                                        <option key={key} value={key}>{cat.emoji} {cat.name} ({cat.points > 0 ? '+' : ''}{cat.points} pts)</option>
+                                    ))}
+                                </select>
+                                <label>Due Date</label>
+                                <input
+                                    type="date"
+                                    value={editingTask.dueDate ? new Date(editingTask.dueDate).toISOString().split('T')[0] : ''}
+                                    onChange={(e) => setEditingTask({...editingTask, dueDate: e.target.value ? new Date(e.target.value).toISOString() : null})}
+                                />
+                                <div className="edit-modal-buttons">
+                                    <button className="btn-cancel" onClick={() => setEditingTask(null)}>Cancel</button>
+                                    <button className="btn-save" onClick={() => {
+                                        updateTask(editingTask.id, {
+                                            text: editingTask.text,
+                                            notes: editingTask.notes,
+                                            category: editingTask.category,
+                                            dueDate: editingTask.dueDate
+                                        });
+                                        setEditingTask(null);
+                                        showToast('Task updated.');
+                                    }}>Save</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Completion Popup */}
+                    {completionPopup && (
+                        <div className="completion-overlay" onClick={() => setCompletionPopup(null)}>
+                            <div className="completion-card" onClick={(e) => e.stopPropagation()}>
+                                <div className="completion-emoji">{completionPopup.emoji}</div>
+                                {completionPopup.points !== undefined && (
+                                    <div className={`completion-points ${completionPopup.points > 0 ? 'positive' : completionPopup.points < 0 ? 'negative' : 'neutral'}`}>
+                                        {completionPopup.points > 0 ? '+' : ''}{completionPopup.points}
+                                    </div>
+                                )}
+                                <div className="completion-quote">{completionPopup.message}</div>
+                                <div className="completion-task">{completionPopup.task}</div>
+                                <div className="completion-category">{completionPopup.category}</div>
+                                <button onClick={() => setCompletionPopup(null)} style={{
+                                    marginTop:'20px', padding:'12px 32px', background:'#f5c518', color:'#1a1a1a',
+                                    border:'none', borderRadius:'6px', fontWeight:700, fontSize:'14px',
+                                    cursor:'pointer', textTransform:'uppercase', letterSpacing:'0.5px'
+                                }}>
+                                    {completionPopup.dismissLabel || 'Hell Yeah'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Toast */}
+                    {toast && <div className="toast">{toast}</div>}
+
+                    {/* Reset Modal */}
+                    <ResetModal
+                        isOpen={showResetModal}
+                        tasks={resetTasks}
+                        onClose={() => setShowResetModal(false)}
+                        onAction={handleResetAction}
+                    />
+                </div>
+            );
+
+            function TodayView() {
+                const [quickText, setQuickText] = useState('');
+                const [quickCat, setQuickCat] = useState('now');
+                const topTask = getTopPriority();
+                const todayTasks = getTodaysTasks();
+
+                return (
+                    <div className="today-layout">
+                        <div className="today-main">
+                            <MemeBanner viewName="today" />
+                            {/* Header */}
+                            <div className="gsd-header">
+                                <div className="gsd-title">GSD</div>
+                                <div className="gsd-tagline">Get. Sh*t. Done.</div>
+                                <div className="streak-badge">🔥 {streak} day streak</div>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="progress-section">
+                                <div className="progress-bar">
+                                    <div
+                                        className="progress-fill"
+                                        style={{
+                                            width: todayTasks.length > 0
+                                                ? `${(getTodaysTasks().filter(t => t.completed).length / todayTasks.length) * 100}%`
+                                                : '0%'
+                                        }}
+                                    ></div>
+                                </div>
+                                <div className="progress-text">
+                                    {getTodaysTasks().filter(t => t.completed).length} of {todayTasks.length} done
+                                </div>
+                            </div>
+
+                            {/* Quick Add Task */}
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Quick add task..."
+                                    value={quickText}
+                                    onChange={(e) => setQuickText(e.target.value)}
+                                    style={{ flex: 1, padding: '10px 12px', border: '2px solid #ddd', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', background: 'white' }}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter' && quickText.trim()) {
+                                            addTask(quickCat, quickText.trim());
+                                            setQuickText('');
+                                        }
+                                    }}
+                                />
+                                <select
+                                    value={quickCat}
+                                    onChange={(e) => setQuickCat(e.target.value)}
+                                    style={{ padding: '10px 8px', border: '2px solid #ddd', borderRadius: '8px', fontSize: '12px', fontFamily: 'inherit', background: 'white', fontWeight: 600 }}
+                                >
+                                    <option value="now">Now +3</option>
+                                    <option value="someday">Someday +2</option>
+                                    <option value="forSomeReason">For Some Reason +1</option>
+                                    <option value="whyOnList">Why Is This Here? -1</option>
+                                </select>
+                                <button
+                                    style={{ padding: '10px 16px', background: '#f5c518', color: '#1a1a1a', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: '18px', cursor: 'pointer', lineHeight: 1 }}
+                                    onClick={() => {
+                                        if (quickText.trim()) {
+                                            addTask(quickCat, quickText.trim());
+                                            setQuickText('');
+                                        }
+                                    }}
+                                >+</button>
+                            </div>
+
+                            {/* Brutal Truth Banner */}
+                            <div className="brutal-truth">
+                                <div style={{fontSize:'10px',fontWeight:800,color:'#f5c518',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'6px'}}>Brutal Truth</div>
+                                "{BRUTAL_TRUTH_QUOTES[brutalTruthIndex]}"
+                            </div>
+
+                            {/* Eat the Frog Card */}
+                            {topTask ? (
+                                <div className="frog-card">
+                                    <div className="frog-badge">Do This First</div>
+                                    <div className="frog-title">Eat the Frog</div>
+                                    <div className="frog-task">{topTask.text}</div>
+                                    <div className="frog-description">
+                                        The one thing that'll make today count. Your brain is fighting you on this one.
+                                    </div>
+                                    <div style={{display:'flex',gap:'8px',marginTop:'12px'}}>
+                                        <button
+                                            className="start-ugly-btn"
+                                            onClick={() => {
+                                                setCompletionPopup({
+                                                    task: topTask.text,
+                                                    category: 'Need to Do It – Now',
+                                                    message: "Don't wait for motivation. Start ugly. Tell yourself, \"I'll just do five minutes.\" Five minutes of ugly effort beats a lifetime of perfectly procrastinating.",
+                                                    emoji: '🚀',
+                                                    dismissLabel: 'Let\'s Go'
+                                                });
+                                            }}
+                                        >
+                                            Start Ugly
+                                        </button>
+                                        <button
+                                            className="start-ugly-btn"
+                                            style={{background:'#22c55e'}}
+                                            onClick={() => toggleTask(topTask.id)}
+                                        >
+                                            ✓ Done
+                                        </button>
+                                    </div>
+                                    <div className="start-ugly-tooltip">
+                                        Five ugly minutes beats zero perfect ones. Momentum always wins.
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="frog-card">
+                                    <div className="frog-title">No Frogs Left to Eat</div>
+                                    <div className="frog-description">
+                                        You've crushed all your high-priority tasks. You're actually killing it.
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Today's Task List */}
+                            <div className="task-list">
+                                <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '12px', color: '#666' }}>
+                                    TODAY'S LIST
+                                </div>
+                                {todayTasks.length === 0 ? (
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">✨</div>
+                                        <div className="empty-state-text">No tasks for today. Either you're done or you're hiding from your life.</div>
+                                    </div>
+                                ) : (
+                                    todayTasks.map(task => (
+                                        <TaskItem
+                                            key={task.id}
+                                            task={task}
+                                            onToggle={() => toggleTask(task.id)}
+                                            onDelete={() => deleteTask(task.id)}
+                                            onEdit={(task) => setEditingTask({...task})}
+                                        />
+                                    ))
+                                )}
+                            </div>
+
+                            {/* This Week Stats */}
+                            <div className="this-week">
+                                <div className="this-week-title">THIS WEEK</div>
+                                <div className="stats-grid">
+                                    <div className="stat-card">
+                                        <div className="stat-value">{tasksThisWeek.length}</div>
+                                        <div className="stat-label">Tasks Done</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-value">{noiseDeleted}</div>
+                                        <div className="stat-label">Noise Deleted</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-value">{frogsEaten}</div>
+                                        <div className="stat-label">Frogs Eaten</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sidebar */}
+                        <div className="today-sidebar">
+                            {/* Bare Minimum List */}
+                            <div className="sidebar-card">
+                                <div className="sidebar-title">The Bare Minimum</div>
+                                <div className="bare-min-items">
+                                    {tasks.now.slice(0, 3).map((task, idx) => (
+                                        <div key={task.id} className="bare-min-item">
+                                            <strong>{idx + 1}.</strong> {task.text}
+                                        </div>
+                                    ))}
+                                    {tasks.now.length === 0 && (
+                                        <div className="bare-min-item">Pick three must-dos</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Weekly Reset Button */}
+                            <button className="reset-btn" onClick={openResetModal}>
+                                Weekly Reset
+                            </button>
+
+                            {/* Momentum Reminder */}
+                            <div className="sidebar-card" style={{ backgroundColor: '#fffbf0', borderColor: '#f5c518' }}>
+                                <div style={{ fontSize: '11px', lineHeight: '1.6', color: '#666' }}>
+                                    <strong>Do → celebrate → repeat</strong>
+                                    <br />
+                                    The momentum loop is your best friend.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            function MatrixView() {
+                const [newTaskText, setNewTaskText] = useState({});
+                const [draggedTask, setDraggedTask] = useState(null);
+
+                const handleAddTask = (category) => {
+                    addTask(category, newTaskText[category] || '');
+                    setNewTaskText({ ...newTaskText, [category]: '' });
+                };
+
+                const handleDragStart = (e, task) => {
+                    setDraggedTask(task);
+                    e.dataTransfer.effectAllowed = 'move';
+                };
+
+                const handleDragOver = (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                };
+
+                const handleDrop = (e, targetCategory) => {
+                    e.preventDefault();
+                    if (draggedTask && draggedTask.category !== targetCategory) {
+                        const task = tasks[draggedTask.category].find(t => t.id === draggedTask.id);
+                        if (task) {
+                            setTasks({
+                                ...tasks,
+                                [draggedTask.category]: tasks[draggedTask.category].filter(t => t.id !== draggedTask.id),
+                                [targetCategory]: [...tasks[targetCategory], { ...task, category: targetCategory }]
+                            });
+                        }
+                    }
+                    setDraggedTask(null);
+                };
+
+                return (
+                    <div>
+                        <MemeBanner viewName="matrix" />
+                        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px' }}>
+                            The Get-Your-Sh*t-Together Matrix
+                        </h2>
+
+                        <div className="matrix-container">
+                            {Object.values(CATEGORIES)
+                                .filter(cat => cat.id !== 'rewards' && cat.id !== 'reflection')
+                                .map(category => (
+                                    <div key={category.id} className="matrix-column">
+                                        <div className="matrix-column-title">{category.name}</div>
+                                        <div className="matrix-points">
+                                            {category.points > 0 ? `+${category.points}` : category.points} Points
+                                        </div>
+
+                                        <div className="matrix-add-task">
+                                            <input
+                                                type="text"
+                                                className="matrix-add-input"
+                                                placeholder="Add task..."
+                                                value={newTaskText[category.id] || ''}
+                                                onChange={(e) => setNewTaskText({ ...newTaskText, [category.id]: e.target.value })}
+                                                onKeyPress={(e) => e.key === 'Enter' && handleAddTask(category.id)}
+                                            />
+                                            <button
+                                                className="matrix-add-btn"
+                                                onClick={() => handleAddTask(category.id)}
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+
+                                        <div
+                                            className="matrix-tasks"
+                                            onDragOver={handleDragOver}
+                                            onDrop={(e) => handleDrop(e, category.id)}
+                                        >
+                                            {tasks[category.id]?.map(task => (
+                                                <div
+                                                    key={task.id}
+                                                    className="matrix-task"
+                                                    draggable
+                                                    onDragStart={(e) => handleDragStart(e, task)}
+                                                    style={{
+                                                        opacity: draggedTask?.id === task.id ? 0.5 : 1
+                                                    }}
+                                                >
+                                                    <div
+                                                        style={{ fontSize: '12px', fontWeight: '600', marginBottom: '4px', cursor: 'pointer' }}
+                                                        onClick={() => setEditingTask({...task})}
+                                                    >
+                                                        {task.text}
+                                                        {task.notes && <div style={{fontSize:'10px', color:'#888', marginTop:'2px'}}>📝 {task.notes.substring(0, 30)}{task.notes.length > 30 ? '...' : ''}</div>}
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                                        <button
+                                                            className="btn-small"
+                                                            onClick={() => toggleTask(task.id)}
+                                                            style={{ flex: 1 }}
+                                                        >
+                                                            {task.completed ? 'Undo' : 'Done'}
+                                                        </button>
+                                                        <button
+                                                            className="btn-delete"
+                                                            onClick={() => deleteTask(task.id)}
+                                                            style={{ flex: 1 }}
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+                    </div>
+                );
+            }
+
+            function BrainDumpView() {
+                const [dumpText, setDumpText] = useState('');
+
+                const handleDump = () => {
+                    if (!dumpText.trim()) return;
+
+                    const lines = dumpText.split('\n').filter(l => l.trim());
+                    setBrainDumpItems([
+                        ...brainDumpItems,
+                        ...lines.map(text => ({ id: Date.now() + Math.random(), text, category: null, dueDate: null }))
+                    ]);
+                    setDumpText('');
+                    showToast('Thoughts captured. Your brain can relax now.');
+                };
+
+                const handleSaveToMatrix = (itemId, category, dueDate) => {
+                    const item = brainDumpItems.find(i => i.id === itemId);
+                    if (item) {
+                        addTask(category, item.text, dueDate);
+                        setBrainDumpItems(brainDumpItems.filter(i => i.id !== itemId));
+                        setExpandedBrainDumpId(null);
+                        showToast(`Added to ${CATEGORIES[category].name}`);
+                    }
+                };
+
+                const handleDeleteBrainDump = (itemId) => {
+                    setBrainDumpItems(brainDumpItems.filter(i => i.id !== itemId));
+                    setExpandedBrainDumpId(null);
+                    showToast('Item deleted');
+                };
+
+                return (
+                    <div className="brain-dump-container">
+                        <MemeBanner viewName="braindump" />
+                        <div className="gsd-header">
+                            <div className="gsd-title" style={{ fontSize: '32px' }}>Dump It</div>
+                            <div className="gsd-tagline">Get it out of your head</div>
+                        </div>
+
+                        <div className="brain-dump-intro">
+                            Get the tasks out of your head and onto paper before your brain stages a full-scale revolt.
+                        </div>
+
+                        <div className="brain-dump-input-group">
+                            <textarea
+                                className="brain-dump-input"
+                                placeholder="Everything. Right now. No filter. Just dump it all here."
+                                value={dumpText}
+                                onChange={(e) => setDumpText(e.target.value)}
+                            />
+                            <button className="brain-dump-btn" onClick={handleDump}>
+                                Capture
+                            </button>
+                        </div>
+
+                        {brainDumpItems.length > 0 && (
+                            <div>
+                                <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '12px', color: '#666' }}>
+                                    UNCATEGORIZED ITEMS ({brainDumpItems.length})
+                                </div>
+
+                                {expandedBrainDumpId && (
+                                    <ExpandedBrainDumpItem
+                                        item={brainDumpItems.find(i => i.id === expandedBrainDumpId)}
+                                        onSave={handleSaveToMatrix}
+                                        onDelete={handleDeleteBrainDump}
+                                        onClose={() => setExpandedBrainDumpId(null)}
+                                    />
+                                )}
+
+                                <div className="brain-dump-items">
+                                    {brainDumpItems.map(item => (
+                                        item.id !== expandedBrainDumpId && (
+                                            <div
+                                                key={item.id}
+                                                className="brain-dump-item"
+                                                onClick={() => setExpandedBrainDumpId(item.id)}
+                                            >
+                                                <div className="brain-dump-item-text">{item.text}</div>
+                                            </div>
+                                        )
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+
+                function ExpandedBrainDumpItem({ item, onSave, onDelete, onClose }) {
+                    const [selectedCategory, setSelectedCategory] = useState('now');
+                    const [selectedDueDate, setSelectedDueDate] = useState('');
+                    const [editText, setEditText] = useState(item.text);
+
+                    return (
+                        <div className="brain-dump-expanded">
+                            <div className="brain-dump-expanded-header">Edit & Categorize</div>
+
+                            <div className="brain-dump-expanded-field">
+                                <div className="brain-dump-expanded-label">Task Text</div>
+                                <input
+                                    type="text"
+                                    className="brain-dump-expanded-input"
+                                    value={editText}
+                                    onChange={(e) => setEditText(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="brain-dump-expanded-field">
+                                <div className="brain-dump-expanded-label">Category</div>
+                                <select
+                                    className="brain-dump-expanded-select"
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                >
+                                    {Object.values(CATEGORIES)
+                                        .filter(cat => cat.id !== 'rewards' && cat.id !== 'reflection' && cat.id !== 'squirrel')
+                                        .map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))}
+                                </select>
+                            </div>
+
+                            <div className="brain-dump-expanded-field">
+                                <div className="brain-dump-expanded-label">Due Date (Optional)</div>
+                                <input
+                                    type="date"
+                                    className="brain-dump-expanded-input"
+                                    value={selectedDueDate}
+                                    onChange={(e) => setSelectedDueDate(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="brain-dump-expanded-buttons">
+                                <button
+                                    className="brain-dump-save-btn"
+                                    onClick={() => onSave(item.id, selectedCategory, selectedDueDate || null)}
+                                >
+                                    Save to Matrix
+                                </button>
+                                <button
+                                    className="brain-dump-expanded-delete"
+                                    onClick={() => onDelete(item.id)}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+            }
+
+            function DoneView() {
+                const getCompletedTasksByDate = () => {
+                    const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    const weekAgo = new Date(today);
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+
+                    const grouped = {
+                        today: [],
+                        yesterday: [],
+                        thisWeek: [],
+                        earlier: []
+                    };
+
+                    completedTasks.forEach(task => {
+                        const taskDate = new Date(new Date(task.completedAt).getFullYear(), new Date(task.completedAt).getMonth(), new Date(task.completedAt).getDate());
+
+                        if (taskDate.getTime() === today.getTime()) {
+                            grouped.today.push(task);
+                        } else if (taskDate.getTime() === yesterday.getTime()) {
+                            grouped.yesterday.push(task);
+                        } else if (taskDate >= weekAgo) {
+                            grouped.thisWeek.push(task);
+                        } else {
+                            grouped.earlier.push(task);
+                        }
+                    });
+
+                    return grouped;
+                };
+
+                const filterTasks = (tasks) => {
+                    return tasks.filter(t => {
+                        const cat = Object.values(CATEGORIES).find(c => c.id === t.category);
+                        if (donePointFilter === 'all') return true;
+                        return cat?.points === parseInt(donePointFilter);
+                    });
+                };
+
+                const grouped = getCompletedTasksByDate();
+                const totalCompleted = completedTasks.length;
+                const totalPoints = completedTasks.reduce((sum, t) => {
+                    const cat = Object.values(CATEGORIES).find(c => c.id === t.category);
+                    return sum + (cat?.points || 0);
+                }, 0);
+
+                return (
+                    <div className="done-container">
+                        <MemeBanner viewName="done" />
+                        <div className="done-header">Completed Items</div>
+
+                        <div className="done-stats">
+                            <div className="done-stat">
+                                <div className="done-stat-value">{totalCompleted}</div>
+                                <div className="done-stat-label">Total Done</div>
+                            </div>
+                            <div className="done-stat">
+                                <div className="done-stat-value">{totalPoints}</div>
+                                <div className="done-stat-label">Total Points</div>
+                            </div>
+                        </div>
+
+                        <div className="done-filters">
+                            <button
+                                className={`done-filter-btn ${donePointFilter === 'all' ? 'active' : ''}`}
+                                onClick={() => setDonePointFilter('all')}
+                            >
+                                All
+                            </button>
+                            <button
+                                className={`done-filter-btn ${donePointFilter === '3' ? 'active' : ''}`}
+                                onClick={() => setDonePointFilter('3')}
+                            >
+                                +3
+                            </button>
+                            <button
+                                className={`done-filter-btn ${donePointFilter === '2' ? 'active' : ''}`}
+                                onClick={() => setDonePointFilter('2')}
+                            >
+                                +2
+                            </button>
+                            <button
+                                className={`done-filter-btn ${donePointFilter === '1' ? 'active' : ''}`}
+                                onClick={() => setDonePointFilter('1')}
+                            >
+                                +1
+                            </button>
+                            <button
+                                className={`done-filter-btn ${donePointFilter === '-1' ? 'active' : ''}`}
+                                onClick={() => setDonePointFilter('-1')}
+                            >
+                                -1
+                            </button>
+                        </div>
+
+                        {completedTasks.length === 0 ? (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">✨</div>
+                                <div className="empty-state-text">Complete a task to see it here.</div>
+                            </div>
+                        ) : (
+                            <>
+                                {filterTasks(grouped.today).length > 0 && (
+                                    <DoneGroup
+                                        title="Today"
+                                        tasks={filterTasks(grouped.today)}
+                                        getCategoryColor={getCategoryColor}
+                                    />
+                                )}
+                                {filterTasks(grouped.yesterday).length > 0 && (
+                                    <DoneGroup
+                                        title="Yesterday"
+                                        tasks={filterTasks(grouped.yesterday)}
+                                        getCategoryColor={getCategoryColor}
+                                    />
+                                )}
+                                {filterTasks(grouped.thisWeek).length > 0 && (
+                                    <DoneGroup
+                                        title="This Week"
+                                        tasks={filterTasks(grouped.thisWeek)}
+                                        getCategoryColor={getCategoryColor}
+                                    />
+                                )}
+                                {filterTasks(grouped.earlier).length > 0 && (
+                                    <DoneGroup
+                                        title="Earlier"
+                                        tasks={filterTasks(grouped.earlier)}
+                                        getCategoryColor={getCategoryColor}
+                                    />
+                                )}
+                            </>
+                        )}
+                    </div>
+                );
+
+                function DoneGroup({ title, tasks, getCategoryColor }) {
+                    const groupPoints = tasks.reduce((sum, t) => {
+                        const cat = Object.values(CATEGORIES).find(c => c.id === t.category);
+                        return sum + (cat?.points || 0);
+                    }, 0);
+
+                    return (
+                        <div className="done-group">
+                            <div className="done-group-header">
+                                {title}
+                                <span className="done-group-total"> ({tasks.length} items, {groupPoints} points)</span>
+                            </div>
+                            {tasks.slice().reverse().map(task => {
+                                const cat = Object.values(CATEGORIES).find(c => c.id === task.category);
+                                return (
+                                    <div
+                                        key={task.id}
+                                        className="done-item"
+                                        style={{ borderLeftColor: getCategoryColor(task.category) }}
+                                    >
+                                        <div className="done-item-left">
+                                            <div className="done-item-text">{task.text}</div>
+                                            <div className="done-item-meta">{cat?.name}</div>
+                                        </div>
+                                        <div className="done-item-points" style={{ color: getCategoryColor(task.category) }}>
+                                            {cat?.points > 0 ? '+' : ''}{cat?.points}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                }
+            }
+
+            function CalendarView() {
+                const monthDays = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 0).getDate();
+                const firstDayOfMonth = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1).getDay();
+                const [selectedDayTasks, setSelectedDayTasks] = useState(null);
+
+                const allTasksFlat = Object.values(tasks).flat();
+                const tasksForDate = (date) => {
+                    return allTasksFlat.filter(t => {
+                        if (!t.dueDate) return false;
+                        const taskDate = new Date(t.dueDate);
+                        return taskDate.toDateString() === date.toDateString();
+                    });
+                };
+
+                const handlePrevMonth = () => {
+                    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1));
+                    setSelectedDayTasks(null);
+                };
+
+                const handleNextMonth = () => {
+                    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1));
+                    setSelectedDayTasks(null);
+                };
+
+                const handleDayClick = (day) => {
+                    const clickedDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day);
+                    setSelectedDayTasks(tasksForDate(clickedDate));
+                };
+
+                const renderCalendarDays = () => {
+                    const days = [];
+                    const today = new Date();
+
+                    for (let i = 0; i < firstDayOfMonth; i++) {
+                        days.push(<div key={`empty-${i}`} className="calendar-day" style={{ opacity: 0.3 }}></div>);
+                    }
+
+                    for (let day = 1; day <= monthDays; day++) {
+                        const cellDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day);
+                        const isToday = cellDate.toDateString() === today.toDateString();
+                        const dayTasks = tasksForDate(cellDate);
+                        const hasTasksForDay = dayTasks.length > 0;
+
+                        days.push(
+                            <div
+                                key={day}
+                                className={`calendar-day ${isToday ? 'today' : ''}`}
+                                onClick={() => handleDayClick(day)}
+                            >
+                                <div className="calendar-day-number">{day}</div>
+                                {hasTasksForDay && (
+                                    <div className="calendar-day-indicators">
+                                        {dayTasks.slice(0, 3).map((task, idx) => (
+                                            <div key={idx} className="calendar-day-dot" style={{ backgroundColor: getCategoryColor(task.category) }}></div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
+
+                    return days;
+                };
+
+                const viewSwitcher = (
+                    <div style={{display:'flex',gap:'8px',marginBottom:'20px'}}>
+                        {['day','week','month'].map(v => (
+                            <button key={v} onClick={() => setCalendarView(v)}
+                                style={{
+                                    flex:1, padding:'10px', border: calendarView===v ? '2px solid #f5c518' : '2px solid #ddd',
+                                    borderRadius:'6px', background: calendarView===v ? '#f5c518' : '#fff',
+                                    color: calendarView===v ? '#1a1a1a' : '#666', fontWeight:700, fontSize:'12px',
+                                    textTransform:'uppercase', letterSpacing:'0.5px', cursor:'pointer'
+                                }}
+                            >{v}</button>
+                        ))}
+                    </div>
+                );
+
+                if (calendarView === 'month') {
+                    return (
+                        <div className="calendar-container">
+                            <MemeBanner viewName="calendar" />
+                            {viewSwitcher}
+                            <div className="calendar-header">
+                                <button className="calendar-nav-btn" onClick={handlePrevMonth}>← Previous</button>
+                                <div className="calendar-title">
+                                    {calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                </div>
+                                <button className="calendar-nav-btn" onClick={handleNextMonth}>Next →</button>
+                            </div>
+
+                            <div className="calendar-month">
+                                <div className="calendar-weekdays">
+                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                        <div key={day} className="calendar-weekday">{day}</div>
+                                    ))}
+                                </div>
+                                <div className="calendar-days">
+                                    {renderCalendarDays()}
+                                </div>
+                            </div>
+
+                            {selectedDayTasks && (
+                                <div style={{ marginTop: '20px' }}>
+                                    <h3 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Tasks for this day:</h3>
+                                    {selectedDayTasks.length === 0 ? (
+                                        <div className="empty-state">
+                                            <div className="empty-state-text">No tasks scheduled for this day.</div>
+                                        </div>
+                                    ) : (
+                                        selectedDayTasks.map(task => (
+                                            <TaskItem
+                                                key={task.id}
+                                                task={task}
+                                                onToggle={() => toggleTask(task.id)}
+                                                onDelete={() => deleteTask(task.id)}
+                                                onEdit={(task) => setEditingTask({...task})}
+                                            />
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                } else if (calendarView === 'week') {
+                    const weekStart = new Date(calendarDate);
+                    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+
+                    return (
+                        <div className="calendar-container">
+                            {viewSwitcher}
+                            <div className="calendar-header">
+                                <button className="calendar-nav-btn" onClick={() => setCalendarDate(new Date(calendarDate.getTime() - 7 * 24 * 60 * 60 * 1000))}>← Previous</button>
+                                <div className="calendar-title">
+                                    {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </div>
+                                <button className="calendar-nav-btn" onClick={() => setCalendarDate(new Date(calendarDate.getTime() + 7 * 24 * 60 * 60 * 1000))}>Next →</button>
+                            </div>
+
+                            <div className="calendar-week">
+                                {[0, 1, 2, 3, 4, 5, 6].map(day => {
+                                    const date = new Date(weekStart.getTime() + day * 24 * 60 * 60 * 1000);
+                                    const dayTasks = tasksForDate(date);
+                                    return (
+                                        <div key={day} className="calendar-week-day">
+                                            <div className="calendar-week-day-header">
+                                                <div className="calendar-week-day-name">
+                                                    {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                                                </div>
+                                                <div className="calendar-week-day-date">
+                                                    {date.getDate()}
+                                                </div>
+                                            </div>
+                                            <div className="calendar-week-tasks">
+                                                {dayTasks.map(task => (
+                                                    <div
+                                                        key={task.id}
+                                                        className="calendar-week-task"
+                                                        style={{ borderLeftColor: getCategoryColor(task.category) }}
+                                                    >
+                                                        <div style={{ fontSize: '10px', color: '#666' }}>{CATEGORIES[task.category]?.emoji}</div>
+                                                        <div style={{ fontSize: '11px', fontWeight: '600' }}>{task.text}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                } else {
+                    const dayTasks = tasksForDate(calendarDate);
+
+                    return (
+                        <div className="calendar-container">
+                            {viewSwitcher}
+                            <div className="calendar-header">
+                                <button className="calendar-nav-btn" onClick={() => setCalendarDate(new Date(calendarDate.getTime() - 24 * 60 * 60 * 1000))}>← Previous Day</button>
+                                <div className="calendar-title">
+                                    {calendarDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                </div>
+                                <button className="calendar-nav-btn" onClick={() => setCalendarDate(new Date(calendarDate.getTime() + 24 * 60 * 60 * 1000))}>Next Day →</button>
+                            </div>
+
+                            <div className="calendar-day-large">
+                                <div className="calendar-day-large-date">{calendarDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                                <div className="calendar-day-large-label">{calendarDate.toLocaleDateString('en-US', { weekday: 'long' })}</div>
+                            </div>
+
+                            {dayTasks.length === 0 ? (
+                                <div className="empty-state">
+                                    <div className="empty-state-icon">✨</div>
+                                    <div className="empty-state-text">No tasks scheduled for this day.</div>
+                                </div>
+                            ) : (
+                                <div className="calendar-day-tasks-by-cat">
+                                    {Object.values(CATEGORIES)
+                                        .filter(cat => cat.id !== 'rewards' && cat.id !== 'reflection')
+                                        .map(cat => {
+                                            const catTasks = dayTasks.filter(t => t.category === cat.id);
+                                            if (catTasks.length === 0) return null;
+                                            return (
+                                                <div key={cat.id} className="calendar-day-cat-group">
+                                                    <div className="calendar-day-cat-name">{cat.emoji} {cat.name}</div>
+                                                    <div className="calendar-day-cat-tasks">
+                                                        {catTasks.map(task => (
+                                                            <TaskItem
+                                                                key={task.id}
+                                                                task={task}
+                                                                onToggle={() => toggleTask(task.id)}
+                                                                onDelete={() => deleteTask(task.id)}
+                                                                onEdit={(task) => setEditingTask({...task})}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
+            }
+
+            function AdminView() {
+                // Simulated aggregate analytics. In production these would be pulled from an
+                // analytics backend (Mixpanel, Amplitude, PostHog, or a custom events table).
+                const stats = React.useMemo(() => ({
+                    generatedAt: new Date().toLocaleString(),
+                    totalUsers: 4_287,
+                    dau: 612,
+                    wau: 1_948,
+                    mau: 3_714,
+                    stickiness: 0.165, // DAU / MAU
+                    sessionsPerUserDaily: 2.4,
+                    sessionsPerUserWeekly: 7.1,
+                    avgSessionLengthSec: 6 * 60 + 42,
+                    medianSessionLengthSec: 4 * 60 + 15,
+                    pagesPerSession: 4.8,
+                    screenBreakdown: [
+                        { name: 'Today',       views: 18_420, pct: 0.31 },
+                        { name: 'Matrix',      views: 11_905, pct: 0.20 },
+                        { name: 'Brain Dump',  views:  8_612, pct: 0.14 },
+                        { name: 'Done',        views:  7_041, pct: 0.12 },
+                        { name: 'Calendar',    views:  5_488, pct: 0.09 },
+                        { name: 'Wins',        views:  4_103, pct: 0.07 },
+                        { name: 'Reviews',     views:  2_631, pct: 0.04 },
+                        { name: 'Admin',       views:    192, pct: 0.01 },
+                    ],
+                    featureUsage: [
+                        { name: 'Add Task',              users: 3_902, events: 42_118 },
+                        { name: 'Complete Task',         users: 3_641, events: 38_774 },
+                        { name: 'Drag-and-Drop',         users: 2_105, events: 11_902 },
+                        { name: 'Edit Task',             users: 1_988, events:  9_413 },
+                        { name: 'Brain Dump Capture',    users: 2_874, events: 22_650 },
+                        { name: 'Squirrel Warning Hit',  users: 2_015, events:  7_388 },
+                        { name: 'Weekly Reset',          users:   918, events:  2_144 },
+                        { name: 'Focus Mode',            users:   776, events:  3_021 },
+                        { name: 'Review Submitted',      users:   214, events:    214 },
+                        { name: 'Review Vote',           users:   642, events:  1_877 },
+                    ],
+                    keyActions: [
+                        { name: 'Tasks completed / day',          value: 9_841 },
+                        { name: 'Points awarded / day',           value: 22_634 },
+                        { name: 'Points deducted / day',          value: 1_402 },
+                        { name: 'Squirrels chased / day',         value: 318 },
+                        { name: '"Start Ugly" taps / day',        value: 612 },
+                        { name: 'Weekly resets / week',           value: 1_118 },
+                        { name: 'Amazon review clicks / week',    value: 284 },
+                    ],
+                    depthBuckets: [
+                        { label: 'Tire-kickers (1 session)',         users: 1_402, pct: 0.33 },
+                        { label: 'Casual (2-5 sessions)',            users: 1_284, pct: 0.30 },
+                        { label: 'Engaged (6-20 sessions)',          users:   997, pct: 0.23 },
+                        { label: 'Power users (21-60 sessions)',     users:   452, pct: 0.11 },
+                        { label: 'Evangelists (60+ sessions)',       users:   152, pct: 0.04 },
+                    ],
+                    avgTasksPerUser: 18.4,
+                    avgCompletedPerUser: 11.7,
+                    avgPointsPerUser: 42.3,
+                    d1Retention: 0.58,
+                    d7Retention: 0.34,
+                    d30Retention: 0.21,
+                }), []);
+
+                const fmtInt = (n) => n.toLocaleString();
+                const fmtPct = (n) => (n * 100).toFixed(1) + '%';
+                const fmtDur = (s) => {
+                    const m = Math.floor(s / 60);
+                    const r = s % 60;
+                    return `${m}m ${r}s`;
+                };
+
+                const card = {
+                    background: '#1a1a1a', color: '#f5f0e6', borderRadius: '12px',
+                    padding: '16px', border: '1px solid #333', marginBottom: '12px'
+                };
+                const statBig = { fontSize: '28px', fontWeight: 800, color: '#f5c518', lineHeight: 1.1 };
+                const statLabel = { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#888', marginTop: '4px' };
+                const h = { fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#f5c518', marginBottom: '10px', borderBottom: '1px solid #333', paddingBottom: '6px' };
+                const row = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', fontSize: '14px', borderBottom: '1px solid #2a2a2a' };
+                const bar = (pct, color) => (
+                    <div style={{ height: '6px', background: '#2a2a2a', borderRadius: '3px', overflow: 'hidden', marginTop: '4px' }}>
+                        <div style={{ height: '100%', width: `${Math.min(100, pct * 100)}%`, background: color || '#f5c518' }} />
+                    </div>
+                );
+
+                return (
+                    <div style={{ padding: '8px 4px' }}>
+                        <div style={{ background: 'linear-gradient(135deg,#000,#2a1a00)', color: '#f5c518', borderRadius: '12px', padding: '18px 20px', marginBottom: '16px', border: '2px solid #f5c518' }}>
+                            <div style={{ fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.7 }}>Restricted · Admin Only</div>
+                            <div style={{ fontSize: '22px', fontWeight: 800, marginTop: '4px' }}>🔐 Usage Analytics Dashboard</div>
+                            <div style={{ fontSize: '12px', opacity: 0.7, marginTop: '6px' }}>Authenticated as <b>{loginEmail}</b> · Snapshot: {stats.generatedAt}</div>
+                        </div>
+
+                        {/* Active users */}
+                        <div style={{ ...card }}>
+                            <div style={h}>Active Users</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                                <div><div style={statBig}>{fmtInt(stats.dau)}</div><div style={statLabel}>DAU</div></div>
+                                <div><div style={statBig}>{fmtInt(stats.wau)}</div><div style={statLabel}>WAU</div></div>
+                                <div><div style={statBig}>{fmtInt(stats.mau)}</div><div style={statLabel}>MAU</div></div>
+                            </div>
+                            <div style={{ marginTop: '12px', fontSize: '13px', color: '#aaa' }}>
+                                Total registered: <b style={{ color: '#f5f0e6' }}>{fmtInt(stats.totalUsers)}</b> · DAU/MAU stickiness: <b style={{ color: '#f5c518' }}>{fmtPct(stats.stickiness)}</b>
+                            </div>
+                        </div>
+
+                        {/* Sessions */}
+                        <div style={{ ...card }}>
+                            <div style={h}>Sessions & Engagement</div>
+                            <div style={row}><span>Sessions / user / day</span><b>{stats.sessionsPerUserDaily.toFixed(1)}</b></div>
+                            <div style={row}><span>Sessions / user / week</span><b>{stats.sessionsPerUserWeekly.toFixed(1)}</b></div>
+                            <div style={row}><span>Avg session length</span><b>{fmtDur(stats.avgSessionLengthSec)}</b></div>
+                            <div style={row}><span>Median session length</span><b>{fmtDur(stats.medianSessionLengthSec)}</b></div>
+                            <div style={{ ...row, borderBottom: 'none' }}><span>Pages / screens per session</span><b>{stats.pagesPerSession.toFixed(1)}</b></div>
+                        </div>
+
+                        {/* Screens */}
+                        <div style={{ ...card }}>
+                            <div style={h}>Pages / Screens per Session</div>
+                            {stats.screenBreakdown.map(s => (
+                                <div key={s.name} style={{ padding: '8px 0', borderBottom: '1px solid #2a2a2a' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                                        <span>{s.name}</span>
+                                        <span style={{ color: '#aaa' }}>{fmtInt(s.views)} views · <b style={{ color: '#f5c518' }}>{fmtPct(s.pct)}</b></span>
+                                    </div>
+                                    {bar(s.pct)}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Feature usage */}
+                        <div style={{ ...card }}>
+                            <div style={h}>Feature Usage</div>
+                            <div style={{ fontSize: '11px', color: '#888', marginBottom: '8px' }}>Unique users who used the feature in the last 30 days · total events</div>
+                            {stats.featureUsage.map(f => {
+                                const adoption = f.users / stats.mau;
+                                return (
+                                    <div key={f.name} style={{ padding: '8px 0', borderBottom: '1px solid #2a2a2a' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                                            <span>{f.name}</span>
+                                            <span style={{ color: '#aaa' }}>{fmtInt(f.users)} users · {fmtInt(f.events)} events</span>
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: '#777', marginTop: '2px' }}>Adoption: {fmtPct(adoption)} of MAU</div>
+                                        {bar(adoption, '#8be28b')}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Key actions */}
+                        <div style={{ ...card }}>
+                            <div style={h}>Frequency of Key Actions</div>
+                            {stats.keyActions.map(k => (
+                                <div key={k.name} style={row}><span>{k.name}</span><b style={{ color: '#f5c518' }}>{fmtInt(k.value)}</b></div>
+                            ))}
+                        </div>
+
+                        {/* Depth of usage */}
+                        <div style={{ ...card }}>
+                            <div style={h}>Depth of Usage per User</div>
+                            {stats.depthBuckets.map(b => (
+                                <div key={b.label} style={{ padding: '8px 0', borderBottom: '1px solid #2a2a2a' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                                        <span>{b.label}</span>
+                                        <span style={{ color: '#aaa' }}>{fmtInt(b.users)} · <b style={{ color: '#f5c518' }}>{fmtPct(b.pct)}</b></span>
+                                    </div>
+                                    {bar(b.pct, '#e28b8b')}
+                                </div>
+                            ))}
+                            <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', fontSize: '12px', color: '#aaa' }}>
+                                <div><b style={{ color: '#f5c518', display: 'block', fontSize: '18px' }}>{stats.avgTasksPerUser.toFixed(1)}</b>Avg tasks / user</div>
+                                <div><b style={{ color: '#f5c518', display: 'block', fontSize: '18px' }}>{stats.avgCompletedPerUser.toFixed(1)}</b>Avg completed / user</div>
+                                <div><b style={{ color: '#f5c518', display: 'block', fontSize: '18px' }}>{stats.avgPointsPerUser.toFixed(1)}</b>Avg points / user</div>
+                            </div>
+                        </div>
+
+                        {/* Retention */}
+                        <div style={{ ...card }}>
+                            <div style={h}>Retention</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                                <div><div style={statBig}>{fmtPct(stats.d1Retention)}</div><div style={statLabel}>D1</div></div>
+                                <div><div style={statBig}>{fmtPct(stats.d7Retention)}</div><div style={statLabel}>D7</div></div>
+                                <div><div style={statBig}>{fmtPct(stats.d30Retention)}</div><div style={statLabel}>D30</div></div>
+                            </div>
+                        </div>
+
+                        <div style={{ fontSize: '11px', color: '#777', textAlign: 'center', padding: '8px 0 16px' }}>
+                            Data is simulated for the prototype. Wire up an analytics provider (PostHog, Mixpanel, Amplitude) to make this live.
+                        </div>
+                    </div>
+                );
+            }
+
+            function ReviewsView() {
+                const AMAZON_URL = 'https://www.amazon.com/Stop-Getting-Distracted-Your-Done/dp/B0FVF9HNYX/ref=sr_1_1?crid=1FE9VG0XP9PG6&dib=eyJ2IjoiMSJ9.W3tLZvMJxJrdFmM1pHOKdVKI8405D7NOzZDU_DQnNso.v-hFT8bI9A9GJAG7AqUTRIMsCMpDW_DWq-fW1CInRr8&dib_tag=se&keywords=knute+steel&qid=1776094538&sprefix=knute+steel%2Caps%2C150&sr=8-1';
+
+                const [reviews, setReviews] = useState([
+                    { id: 1, author: 'ProductivityNerd42', stars: 5, date: 'April 10, 2026', title: 'Finally a productivity book that doesn\'t make me want to nap', text: 'I\'ve read every GTD book out there and they all feel like they were written by robots. This one actually made me laugh AND get stuff done. The matrix system is dead simple and the tone keeps you honest. -1 point for sock drawer organizing? Yes please.', upvotes: 47, downvotes: 3, voted: null },
+                    { id: 2, author: 'ChaosMom_3Kids', stars: 5, date: 'April 8, 2026', title: 'My to-do list finally makes sense', text: 'As a mom of three, I had 400 things on my list and no idea what mattered. This book helped me realize half of them were in the "Why Is This On My List?" category. Deleted 200 tasks. Life changed. The sarcasm kept me going through the hard parts.', upvotes: 38, downvotes: 1, voted: null },
+                    { id: 3, author: 'StartupSteve', stars: 4, date: 'April 6, 2026', title: 'Great concept, wish the app existed sooner', text: 'The matrix concept is brilliant. Categorizing tasks by actual importance instead of fake urgency was an eye opener. Took off one star because I wanted more on team productivity, but for personal use this is a 10/10. Start ugly is now my daily mantra.', upvotes: 29, downvotes: 5, voted: null },
+                    { id: 4, author: 'RecoveringPerfectionist', stars: 5, date: 'April 4, 2026', title: 'Momentum over perfection changed everything', text: 'I spent years waiting for the perfect moment to start things. This book called me out in the most hilarious and loving way possible. "Five ugly minutes beats zero perfect ones" is tattooed on my brain now. Possibly on my arm soon.', upvotes: 52, downvotes: 2, voted: null },
+                    { id: 5, author: 'SkepticalSam', stars: 3, date: 'April 2, 2026', title: 'Funny but not groundbreaking', text: 'Look, the writing is entertaining and the framework works. But at its core this is a priority matrix with better branding. If you already know the Eisenhower matrix, you might not learn much new. That said, the humor kept me reading when other books put me to sleep.', upvotes: 18, downvotes: 12, voted: null },
+                    { id: 6, author: 'FrogEater2026', stars: 5, date: 'March 30, 2026', title: 'Eat the frog. Start ugly. Stack wins.', text: 'Three phrases from this book that I now say to myself every morning. The weekly reset idea alone was worth the price. I actually look forward to reviewing my week instead of dreading it. Also the -1 points for busywork is savage and perfect.', upvotes: 41, downvotes: 0, voted: null },
+                    { id: 7, author: 'CorporateDrone_NoMore', stars: 4, date: 'March 28, 2026', title: 'Anti-corporate productivity at its best', text: 'Finally a productivity system that doesn\'t feel like it was designed by a management consultant. It\'s for actual humans who sometimes reorganize their desk to avoid real work. The "Squirrel!" category for unplanned wins is genius.', upvotes: 33, downvotes: 4, voted: null },
+                    { id: 8, author: 'NightOwlNancy', stars: 5, date: 'March 25, 2026', title: 'Read it at 2am. Started getting stuff done at 2:15am.', text: 'I bought this on impulse at midnight, read it in one sitting, and immediately reorganized my entire task list using the matrix. My husband thought I was having a breakdown. Nope - just finally had a system that matched my chaotic energy.', upvotes: 44, downvotes: 1, voted: null }
+                ]);
+
+                const handleVote = (reviewId, direction) => {
+                    setReviews(reviews.map(r => {
+                        if (r.id !== reviewId) return r;
+                        if (r.voted === direction) return r; // already voted this way
+                        const undo = r.voted !== null; // undoing previous vote
+                        return {
+                            ...r,
+                            upvotes: direction === 'up' ? r.upvotes + 1 : (undo ? r.upvotes - 1 : r.upvotes),
+                            downvotes: direction === 'down' ? r.downvotes + 1 : (undo ? r.downvotes - 1 : r.downvotes),
+                            voted: direction
+                        };
+                    }));
+                };
+
+                const renderStars = (count) => {
+                    return '★'.repeat(count) + '☆'.repeat(5 - count);
+                };
+
+                return (
+                    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                        <MemeBanner viewName="reviews" />
+                        <div className="gsd-header">
+                            <div className="gsd-title" style={{ fontSize: '28px' }}>Reviews</div>
+                            <div className="gsd-tagline">What readers are saying about Get Sh*t Done</div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                            <button
+                                onClick={() => window.open(AMAZON_URL, '_blank')}
+                                style={{ flex: 1, padding: '14px', background: '#f5c518', color: '#1a1a1a', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                            >
+                                ⭐ Leave a Review on Amazon
+                            </button>
+                        </div>
+
+                        <div style={{ background: '#fff8e1', borderRadius: '10px', padding: '14px 16px', marginBottom: '20px', fontSize: '13px', color: '#444', lineHeight: 1.5 }}>
+                            <strong>🏆 Weekly Review Contest</strong> — Leave a review, earn +5 points. The most upvoted review each week wins. Vote for your favorites below!
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {reviews.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes)).map(review => (
+                                <div key={review.id} style={{ background: 'white', borderRadius: '12px', padding: '16px', border: '1px solid #e0dcd4' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                                        <div>
+                                            <div style={{ fontSize: '15px', fontWeight: 700, color: '#1a1a1a', marginBottom: '2px' }}>{review.title}</div>
+                                            <div style={{ fontSize: '12px', color: '#f5a623', letterSpacing: '1px' }}>{renderStars(review.stars)}</div>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: '50px' }}>
+                                            <button onClick={() => handleVote(review.id, 'up')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', opacity: review.voted === 'up' ? 1 : 0.4, padding: '2px' }}>👍</button>
+                                            <div style={{ fontSize: '13px', fontWeight: 700, color: (review.upvotes - review.downvotes) > 0 ? '#22c55e' : (review.upvotes - review.downvotes) < 0 ? '#ef4444' : '#666' }}>
+                                                {review.upvotes - review.downvotes > 0 ? '+' : ''}{review.upvotes - review.downvotes}
+                                            </div>
+                                            <button onClick={() => handleVote(review.id, 'down')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', opacity: review.voted === 'down' ? 1 : 0.4, padding: '2px' }}>👎</button>
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '13px', color: '#444', lineHeight: 1.6, marginBottom: '8px' }}>{review.text}</div>
+                                    <div style={{ fontSize: '11px', color: '#999' }}>
+                                        by <strong>{review.author}</strong> — {review.date}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={{ textAlign: 'center', marginTop: '24px', marginBottom: '16px' }}>
+                            <button
+                                onClick={() => window.open(AMAZON_URL, '_blank')}
+                                style={{ padding: '12px 32px', background: '#1a1a1a', color: '#f5c518', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                            >
+                                See All Reviews on Amazon →
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            function WinsView() {
+                const [selectedReward, setSelectedReward] = useState(null);
+                const [rewards, setRewards] = useState([
+                    { id: 1, name: 'Coffee', reason: 'I earned a fucking break', points: 5 },
+                    { id: 2, name: 'Nap', reason: 'Sleep is productivity', points: 3 },
+                    { id: 3, name: 'Smug Self-Satisfaction', reason: 'Free and priceless', points: 0 }
+                ]);
+
+                return (
+                    <div className="wins-container">
+                        <MemeBanner viewName="wins" />
+                        <div className="gsd-header">
+                            <div className="gsd-title" style={{ fontSize: '32px' }}>Wins</div>
+                            <div className="gsd-tagline">Look what you did</div>
+                        </div>
+
+                        {/* Total Score */}
+                        <div className="total-score-box">
+                            <div className="total-score-value">{totalScore}</div>
+                            <div className="total-score-label">Total Score</div>
+                        </div>
+
+                        {/* Rewards Section */}
+                        <div className="wins-section">
+                            <div className="wins-section-title">Damn I'm Good – Look What I Get</div>
+                            <div className="rewards-grid">
+                                {rewards.map(reward => (
+                                    <div key={reward.id} className="reward-card">
+                                        <div className="reward-name">{reward.name}</div>
+                                        <div className="reward-reason">{reward.reason}</div>
+                                        <div className="reward-points">
+                                            {reward.points > 0 ? `+${reward.points} pts` : 'Priceless'}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Completed Tasks */}
+                        <div className="wins-section">
+                            <div className="wins-section-title">Completed Tasks</div>
+                            {completedTasks.length === 0 ? (
+                                <div className="empty-state">
+                                    <div className="empty-state-text">Complete a task to see it here.</div>
+                                </div>
+                            ) : (
+                                <div className="completed-tasks-list">
+                                    {completedTasks.slice().reverse().map(task => {
+                                        const cat = Object.values(CATEGORIES).find(c => c.id === task.category);
+                                        return (
+                                            <div key={task.id} className="completed-task-item">
+                                                <div className="completed-task-name">{task.text}</div>
+                                                <div className="completed-task-points">
+                                                    {cat?.points || 0} pts
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Reflection Section */}
+                        <div className="wins-section">
+                            <div className="reflection-section">
+                                <div className="reflection-title">What Was I Thinking?</div>
+                                <div className="reflection-items">
+                                    <div className="reflection-item">
+                                        "Do → celebrate → repeat. The momentum loop is your best friend."
+                                    </div>
+                                    <div className="reflection-item">
+                                        "A +1 day beats a zero."
+                                    </div>
+                                    <div className="reflection-item">
+                                        "The scoreboard doesn't judge you. It just keeps score. And somehow, that's enough."
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            function TaskItem({ task, onToggle, onDelete, onEdit }) {
+                const category = CATEGORIES[task.category];
+
+                return (
+                    <div className={`task-item ${task.completed ? 'completed' : ''}`}>
+                        <div className={`task-checkbox ${task.completed ? 'checked' : ''}`} onClick={onToggle}>
+                            {task.completed && '✓'}
+                        </div>
+                        <div className="task-content" onClick={() => onEdit && onEdit(task)} style={{cursor: onEdit ? 'pointer' : 'default'}}>
+                            <div className="task-text">{task.text}</div>
+                            <div className="task-category">{category.emoji} {category.name}</div>
+                            {task.notes && <div className="task-notes-preview">📝 {task.notes}</div>}
+                            <div className="task-badges">
+                                {category.points > 0 && (
+                                    <div className="badge badge-positive">+{category.points} pts</div>
+                                )}
+                                {category.points < 0 && (
+                                    <div className="badge badge-negative">{category.points} pts</div>
+                                )}
+                                {category.points === 0 && (
+                                    <div className="badge badge-neutral">0 pts</div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="task-actions">
+                            <button className="btn-small" onClick={onToggle}>
+                                {task.completed ? 'Undo' : 'Done'}
+                            </button>
+                            <button className="btn-delete" onClick={onDelete}>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            function ResetModal({ isOpen, tasks: resetTasks, onClose, onAction }) {
+                return (
+                    <div className={`modal ${isOpen ? 'active' : ''}`}>
+                        <div className="modal-content">
+                            <div className="modal-title">Weekly Reset</div>
+                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '16px', lineHeight: '1.6' }}>
+                                <strong>"What got done? What's still real? What can I kill?"</strong>
+                                <br />
+                                <br />
+                                If a task has survived three resets without moving, it's not a task—it's a guilt souvenir. Throw it out.
+                                <br />
+                                <br />
+                                Fifteen minutes of honest accounting beats seven days of productive-looking chaos.
+                            </div>
+
+                            <div className="reset-items">
+                                {resetTasks.length === 0 ? (
+                                    <div className="empty-state">
+                                        <div className="empty-state-text">All tasks reviewed. You're all set!</div>
+                                    </div>
+                                ) : (
+                                    resetTasks.map(task => (
+                                        <div key={task.id} className="reset-item">
+                                            <div className="reset-item-text">
+                                                <strong>{task.text}</strong>
+                                                <br />
+                                                <span style={{ fontSize: '11px', color: '#999' }}>
+                                                    {CATEGORIES[task.category]?.name}
+                                                </span>
+                                            </div>
+                                            <div className="reset-action">
+                                                <button
+                                                    className="reset-btn-small"
+                                                    onClick={() => onAction(task.id, 'keep')}
+                                                >
+                                                    Keep
+                                                </button>
+                                                <button
+                                                    className="reset-btn-small"
+                                                    onClick={() => onAction(task.id, 'reschedule')}
+                                                >
+                                                    Reschedule
+                                                </button>
+                                                <button
+                                                    className="reset-btn-small"
+                                                    onClick={() => onAction(task.id, 'kill')}
+                                                >
+                                                    Kill
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            <div className="modal-buttons">
+                                <button className="btn-secondary" onClick={onClose}>
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+        }
+
+        // Error boundary
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+            componentDidCatch(error, info) {
+                console.error('App Error:', error, info);
+            }
+            render() {
+                if (this.state.hasError) {
+                    return React.createElement('div', {style: {padding: '40px', fontFamily: 'monospace', color: 'red'}},
+                        React.createElement('h2', null, 'Something went wrong'),
+                        React.createElement('pre', null, this.state.error?.toString()),
+                        React.createElement('pre', null, this.state.error?.stack)
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
+        // Render the app
+        ReactDOM.render(<ErrorBoundary><GetShitDoneApp /></ErrorBoundary>, document.getElementById('root'));
+    </script>
+</body>
+</html>

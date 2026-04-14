@@ -7,6 +7,19 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script>
+      firebase.initializeApp({
+        apiKey: "AIzaSyCNF2WO_Erxljzv5yh3-CcFIECQnKtGlPo",
+        authDomain: "getitdone-e84f6.firebaseapp.com",
+        projectId: "getitdone-e84f6",
+        storageBucket: "getitdone-e84f6.firebasestorage.app",
+        messagingSenderId: "265115035497",
+        appId: "1:265115035497:web:f9e5eda3b073798731bff8",
+        measurementId: "G-51H84FBGD8"
+      });
+    </script>
     <style>
         * {
             margin: 0;
@@ -1815,7 +1828,78 @@
         function GetShitDoneApp() {
             const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [loginEmail, setLoginEmail] = useState('');
-            const [loginStep, setLoginStep] = useState('email'); // 'email', 'confirm', 'done'
+            const [loginStep, setLoginStep] = useState('email'); // 'email', 'sending', 'confirm', 'done'
+            const [loginError, setLoginError] = useState('');
+            const [loginBusy, setLoginBusy] = useState(false);
+
+            // Firebase auth: restore session, handle magic-link return
+            React.useEffect(() => {
+                const auth = firebase.auth();
+                // If this page load is from a magic link, finish sign-in.
+                if (auth.isSignInWithEmailLink(window.location.href)) {
+                    let emailForSignIn = window.localStorage.getItem('gsdEmailForSignIn');
+                    if (!emailForSignIn) {
+                        emailForSignIn = window.prompt('Confirm your email to finish signing in');
+                    }
+                    if (emailForSignIn) {
+                        auth.signInWithEmailLink(emailForSignIn, window.location.href)
+                            .then((result) => {
+                                window.localStorage.removeItem('gsdEmailForSignIn');
+                                setLoginEmail(result.user.email || emailForSignIn);
+                                setIsLoggedIn(true);
+                                setLoginStep('done');
+                                // Clean the magic-link params from the URL
+                                if (window.history && window.history.replaceState) {
+                                    window.history.replaceState({}, document.title, window.location.pathname);
+                                }
+                            })
+                            .catch((err) => {
+                                setLoginError(err.message || 'Sign-in link failed. Try again.');
+                            });
+                    }
+                }
+                // Keep logged-in state in sync with Firebase session
+                const unsub = auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        setLoginEmail(user.email || '');
+                        setIsLoggedIn(true);
+                        setLoginStep('done');
+                    }
+                });
+                return () => unsub();
+            }, []);
+
+            const sendLoginLink = () => {
+                const email = loginEmail.trim();
+                if (!email.includes('@')) {
+                    setLoginError('Enter a real email, please.');
+                    return;
+                }
+                setLoginError('');
+                setLoginBusy(true);
+                const actionCodeSettings = {
+                    url: window.location.origin + window.location.pathname,
+                    handleCodeInApp: true
+                };
+                firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
+                    .then(() => {
+                        window.localStorage.setItem('gsdEmailForSignIn', email);
+                        setLoginStep('confirm');
+                    })
+                    .catch((err) => {
+                        setLoginError(err.message || 'Could not send the link. Try again.');
+                    })
+                    .finally(() => setLoginBusy(false));
+            };
+
+            const logout = () => {
+                firebase.auth().signOut().then(() => {
+                    window.localStorage.removeItem('gsdEmailForSignIn');
+                    setIsLoggedIn(false);
+                    setLoginStep('email');
+                    setLoginEmail('');
+                });
+            };
             const [showReviewPopup, setShowReviewPopup] = useState(false);
             const [hasReviewed, setHasReviewed] = useState(false);
             const [currentView, setCurrentView] = useState('today');
@@ -2262,24 +2346,29 @@
                             {loginStep === 'email' && (
                                 <div>
                                     <div style={{ fontSize: '14px', color: '#444', marginBottom: '20px', lineHeight: 1.5 }}>
-                                        Enter your email to get started. We will send you a confirmation link.
+                                        Enter your email to get started. We'll send you a one-click sign-in link.
                                     </div>
                                     <input
                                         type="email"
                                         placeholder="your@email.com"
                                         value={loginEmail}
                                         onChange={(e) => setLoginEmail(e.target.value)}
+                                        disabled={loginBusy}
                                         style={{ width: '100%', padding: '14px 16px', border: '2px solid #ddd', borderRadius: '10px', fontSize: '16px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box', textAlign: 'center' }}
                                         onKeyPress={(e) => {
-                                            if (e.key === 'Enter' && loginEmail.includes('@')) setLoginStep('confirm');
+                                            if (e.key === 'Enter') sendLoginLink();
                                         }}
                                     />
                                     <button
-                                        onClick={() => { if (loginEmail.includes('@')) setLoginStep('confirm'); }}
-                                        style={{ width: '100%', padding: '14px', background: '#f5c518', color: '#1a1a1a', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '16px', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '1px' }}
+                                        onClick={sendLoginLink}
+                                        disabled={loginBusy}
+                                        style={{ width: '100%', padding: '14px', background: loginBusy ? '#ccc' : '#f5c518', color: '#1a1a1a', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '16px', cursor: loginBusy ? 'default' : 'pointer', textTransform: 'uppercase', letterSpacing: '1px' }}
                                     >
-                                        Send Confirmation Link
+                                        {loginBusy ? 'Sending...' : 'Send Sign-In Link'}
                                     </button>
+                                    {loginError && (
+                                        <div style={{ fontSize: '12px', color: '#c0392b', marginTop: '12px' }}>{loginError}</div>
+                                    )}
                                 </div>
                             )}
 
@@ -2288,24 +2377,21 @@
                                     <div style={{ fontSize: '48px', marginBottom: '16px' }}>📧</div>
                                     <div style={{ fontSize: '16px', fontWeight: 700, color: '#1a1a1a', marginBottom: '8px' }}>Check Your Email</div>
                                     <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px', lineHeight: 1.5 }}>
-                                        We sent a confirmation link to:
+                                        We sent a sign-in link to:
                                     </div>
                                     <div style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a', marginBottom: '24px' }}>{loginEmail}</div>
-                                    <div style={{ fontSize: '12px', color: '#999', marginBottom: '24px' }}>
-                                        (For this prototype, just click the button below)
+                                    <div style={{ fontSize: '12px', color: '#999', marginBottom: '24px', lineHeight: 1.5 }}>
+                                        Click the link in the email to finish signing in. You can close this tab — the link will bring you back.
                                     </div>
                                     <button
-                                        onClick={() => { setLoginStep('done'); setIsLoggedIn(true); }}
-                                        style={{ width: '100%', padding: '14px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '16px', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '1px' }}
-                                    >
-                                        I Confirmed My Email
-                                    </button>
-                                    <button
-                                        onClick={() => setLoginStep('email')}
+                                        onClick={() => { setLoginStep('email'); setLoginError(''); }}
                                         style={{ width: '100%', padding: '10px', background: 'transparent', color: '#666', border: 'none', fontSize: '13px', cursor: 'pointer', marginTop: '12px' }}
                                     >
                                         Use a different email
                                     </button>
+                                    {loginError && (
+                                        <div style={{ fontSize: '12px', color: '#c0392b', marginTop: '12px' }}>{loginError}</div>
+                                    )}
                                 </div>
                             )}
 

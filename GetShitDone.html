@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script>
       firebase.initializeApp({
         apiKey: "AIzaSyCNF2WO_Erxljzv5yh3-CcFIECQnKtGlPo",
@@ -1900,6 +1901,67 @@
                     setLoginEmail('');
                 });
             };
+
+            // --- Subscription / Firestore user doc ---
+            const [userDoc, setUserDoc] = useState(null);
+            const [showPaywall, setShowPaywall] = useState(false);
+            const FREE_TASK_LIMIT = 10;
+            const ADMIN_EMAIL = 'knutesteel@gmail.com';
+
+            React.useEffect(() => {
+                if (!isLoggedIn) { setUserDoc(null); return; }
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                const ref = firebase.firestore().collection('users').doc(user.uid);
+                ref.get().then(snap => {
+                    if (!snap.exists) {
+                        const initial = {
+                            email: (user.email || loginEmail || '').toLowerCase(),
+                            subscription: (user.email && user.email.toLowerCase() === ADMIN_EMAIL) ? 'lifetime' : 'free',
+                            subscriptionGrantedBy: null,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+                        ref.set(initial).catch(() => {});
+                    } else {
+                        ref.update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+                    }
+                }).catch(() => {});
+                const unsub = ref.onSnapshot(snap => {
+                    if (snap.exists) setUserDoc({ uid: user.uid, ...snap.data() });
+                }, () => {});
+                return () => unsub();
+            }, [isLoggedIn, loginEmail]);
+
+            const isPaid = () => {
+                if (!userDoc) return false;
+                return ['monthly', 'yearly', 'lifetime'].includes(userDoc.subscription);
+            };
+
+            const countAllTasks = () => {
+                const matrixCount = Object.entries(tasks || {})
+                    .filter(([k]) => k !== 'rewards' && k !== 'reflection')
+                    .reduce((acc, [, arr]) => acc + (arr ? arr.length : 0), 0);
+                return matrixCount + (brainDumpItems ? brainDumpItems.length : 0);
+            };
+
+            const canAddItems = (count = 1) => {
+                if (isPaid()) return true;
+                return countAllTasks() + count <= FREE_TASK_LIMIT;
+            };
+
+            const triggerPaywall = () => setShowPaywall(true);
+
+            const deleteAllSampleData = () => {
+                if (!window.confirm('Delete ALL tasks, brain-dump items, completed history, rewards, and reflections? This cannot be undone.')) return;
+                setTasks({
+                    now: [], someday: [], forSomeReason: [], whyOnList: [],
+                    squirrel: [], rewards: [], reflection: []
+                });
+                setBrainDumpItems([]);
+                setCompletedTasks([]);
+                showToast('Clean slate. Your move.');
+            };
             const [showReviewPopup, setShowReviewPopup] = useState(false);
             const [hasReviewed, setHasReviewed] = useState(false);
             const [currentView, setCurrentView] = useState('today');
@@ -2065,6 +2127,11 @@
             // Add task to category
             const addTask = (category, text, dueDate = null, notes = '') => {
                 if (!text.trim()) return;
+
+                if (!canAddItems(1)) {
+                    triggerPaywall();
+                    return;
+                }
 
                 const newTask = {
                     id: Date.now().toString(),
@@ -2638,6 +2705,45 @@
                         onClose={() => setShowResetModal(false)}
                         onAction={handleResetAction}
                     />
+
+                    {/* Paywall Modal */}
+                    {showPaywall && (
+                        <div onClick={() => setShowPaywall(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                            <div onClick={(e) => e.stopPropagation()} style={{ background: '#1a1a1a', borderRadius: '16px', maxWidth: '520px', width: '100%', padding: '32px 24px', border: '2px solid #f5c518', color: '#eee', maxHeight: '90vh', overflowY: 'auto' }}>
+                                <div style={{ fontSize: '28px', fontWeight: 900, color: '#f5c518', marginBottom: '6px', textAlign: 'center' }}>10 Items. That's the Free Ride.</div>
+                                <div style={{ fontSize: '14px', color: '#aaa', marginBottom: '20px', textAlign: 'center', lineHeight: 1.5 }}>
+                                    You've filled your matrix. Either delete some nonsense from "Why Is This On My List?" — or upgrade and stop rationing your own productivity.
+                                </div>
+
+                                {[
+                                    { key: 'monthly', price: '$4.99', unit: '/ month', label: 'Monthly', sub: 'Cancel anytime. No drama.' },
+                                    { key: 'yearly', price: '$49.99', unit: '/ year', label: 'Yearly', sub: 'Two months free. Math wins.' },
+                                    { key: 'lifetime', price: '$99', unit: 'one-time', label: 'Lifetime', sub: 'Pay once. Never see this modal again.' }
+                                ].map(tier => (
+                                    <a key={tier.key}
+                                       href={`mailto:${ADMIN_EMAIL}?subject=GSD%20Upgrade%20-%20${tier.label}&body=I%20want%20the%20${tier.label}%20plan%20(${tier.price}).%20My%20email%3A%20${encodeURIComponent(loginEmail)}`}
+                                       style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#2a2a2a', border: '1px solid #333', borderRadius: '12px', padding: '16px', marginBottom: '10px', textDecoration: 'none', color: '#eee' }}>
+                                        <div>
+                                            <div style={{ fontSize: '16px', fontWeight: 800, color: '#f5c518' }}>{tier.label}</div>
+                                            <div style={{ fontSize: '12px', color: '#aaa', marginTop: '2px' }}>{tier.sub}</div>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <div style={{ fontSize: '22px', fontWeight: 900, color: '#fff' }}>{tier.price}</div>
+                                            <div style={{ fontSize: '11px', color: '#888' }}>{tier.unit}</div>
+                                        </div>
+                                    </a>
+                                ))}
+
+                                <div style={{ fontSize: '11px', color: '#777', marginTop: '14px', lineHeight: 1.5, textAlign: 'center' }}>
+                                    Clicking a plan opens your mail app to request an upgrade. Once paid, access is granted from the admin console.
+                                </div>
+
+                                <button onClick={() => setShowPaywall(false)} style={{ width: '100%', marginTop: '14px', padding: '12px', background: 'transparent', color: '#aaa', border: '1px solid #333', borderRadius: '10px', fontSize: '13px', cursor: 'pointer' }}>
+                                    Not now
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
 
@@ -2656,6 +2762,21 @@
                                 <div className="gsd-title">GSD</div>
                                 <div className="gsd-tagline">Get. Sh*t. Done.</div>
                                 <div className="streak-badge">🔥 {streak} day streak</div>
+                            </div>
+
+                            {/* Quota + clear sample data */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', margin: '0 16px 12px', background: isPaid() ? 'rgba(245,197,24,0.08)' : 'rgba(0,0,0,0.04)', border: '1px solid ' + (isPaid() ? '#f5c518' : '#e5e5e5'), borderRadius: '10px', fontSize: '12px' }}>
+                                <div style={{ color: '#444' }}>
+                                    {isPaid()
+                                        ? <span><b style={{ color: '#b8860b' }}>{(userDoc && userDoc.subscription || 'paid').toUpperCase()}</b> · unlimited items</span>
+                                        : <span>{countAllTasks()} / {FREE_TASK_LIMIT} free items used</span>}
+                                </div>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    {!isPaid() && (
+                                        <button onClick={triggerPaywall} style={{ background: '#f5c518', color: '#1a1a1a', border: 'none', padding: '6px 10px', borderRadius: '6px', fontWeight: 800, fontSize: '11px', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Upgrade</button>
+                                    )}
+                                    <button onClick={deleteAllSampleData} style={{ background: 'transparent', color: '#c0392b', border: '1px solid #c0392b', padding: '6px 10px', borderRadius: '6px', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>Clear Sample Data</button>
+                                </div>
                             </div>
 
                             {/* Progress Bar */}
@@ -2963,6 +3084,10 @@
                     if (!dumpText.trim()) return;
 
                     const lines = dumpText.split('\n').filter(l => l.trim());
+                    if (!canAddItems(lines.length)) {
+                        triggerPaywall();
+                        return;
+                    }
                     setBrainDumpItems([
                         ...brainDumpItems,
                         ...lines.map(text => ({ id: Date.now() + Math.random(), text, category: null, dueDate: null }))
@@ -3507,191 +3632,140 @@
             }
 
             function AdminView() {
-                // Simulated aggregate analytics. In production these would be pulled from an
-                // analytics backend (Mixpanel, Amplitude, PostHog, or a custom events table).
-                const stats = React.useMemo(() => ({
-                    generatedAt: new Date().toLocaleString(),
-                    totalUsers: 4_287,
-                    dau: 612,
-                    wau: 1_948,
-                    mau: 3_714,
-                    stickiness: 0.165, // DAU / MAU
-                    sessionsPerUserDaily: 2.4,
-                    sessionsPerUserWeekly: 7.1,
-                    avgSessionLengthSec: 6 * 60 + 42,
-                    medianSessionLengthSec: 4 * 60 + 15,
-                    pagesPerSession: 4.8,
-                    screenBreakdown: [
-                        { name: 'Today',       views: 18_420, pct: 0.31 },
-                        { name: 'Matrix',      views: 11_905, pct: 0.20 },
-                        { name: 'Brain Dump',  views:  8_612, pct: 0.14 },
-                        { name: 'Done',        views:  7_041, pct: 0.12 },
-                        { name: 'Calendar',    views:  5_488, pct: 0.09 },
-                        { name: 'Wins',        views:  4_103, pct: 0.07 },
-                        { name: 'Reviews',     views:  2_631, pct: 0.04 },
-                        { name: 'Admin',       views:    192, pct: 0.01 },
-                    ],
-                    featureUsage: [
-                        { name: 'Add Task',              users: 3_902, events: 42_118 },
-                        { name: 'Complete Task',         users: 3_641, events: 38_774 },
-                        { name: 'Drag-and-Drop',         users: 2_105, events: 11_902 },
-                        { name: 'Edit Task',             users: 1_988, events:  9_413 },
-                        { name: 'Brain Dump Capture',    users: 2_874, events: 22_650 },
-                        { name: 'Squirrel Warning Hit',  users: 2_015, events:  7_388 },
-                        { name: 'Weekly Reset',          users:   918, events:  2_144 },
-                        { name: 'Focus Mode',            users:   776, events:  3_021 },
-                        { name: 'Review Submitted',      users:   214, events:    214 },
-                        { name: 'Review Vote',           users:   642, events:  1_877 },
-                    ],
-                    keyActions: [
-                        { name: 'Tasks completed / day',          value: 9_841 },
-                        { name: 'Points awarded / day',           value: 22_634 },
-                        { name: 'Points deducted / day',          value: 1_402 },
-                        { name: 'Squirrels chased / day',         value: 318 },
-                        { name: '"Start Ugly" taps / day',        value: 612 },
-                        { name: 'Weekly resets / week',           value: 1_118 },
-                        { name: 'Amazon review clicks / week',    value: 284 },
-                    ],
-                    depthBuckets: [
-                        { label: 'Tire-kickers (1 session)',         users: 1_402, pct: 0.33 },
-                        { label: 'Casual (2-5 sessions)',            users: 1_284, pct: 0.30 },
-                        { label: 'Engaged (6-20 sessions)',          users:   997, pct: 0.23 },
-                        { label: 'Power users (21-60 sessions)',     users:   452, pct: 0.11 },
-                        { label: 'Evangelists (60+ sessions)',       users:   152, pct: 0.04 },
-                    ],
-                    avgTasksPerUser: 18.4,
-                    avgCompletedPerUser: 11.7,
-                    avgPointsPerUser: 42.3,
-                    d1Retention: 0.58,
-                    d7Retention: 0.34,
-                    d30Retention: 0.21,
-                }), []);
+                const [users, setUsers] = useState([]);
+                const [loading, setLoading] = useState(true);
+                const [err, setErr] = useState('');
+                const [busyUid, setBusyUid] = useState(null);
 
-                const fmtInt = (n) => n.toLocaleString();
+                React.useEffect(() => {
+                    setLoading(true);
+                    const unsub = firebase.firestore().collection('users').onSnapshot(snap => {
+                        const list = [];
+                        snap.forEach(d => list.push({ uid: d.id, ...d.data() }));
+                        list.sort((a, b) => {
+                            const aTs = (a.lastSeen && a.lastSeen.toMillis) ? a.lastSeen.toMillis() : 0;
+                            const bTs = (b.lastSeen && b.lastSeen.toMillis) ? b.lastSeen.toMillis() : 0;
+                            return bTs - aTs;
+                        });
+                        setUsers(list);
+                        setLoading(false);
+                    }, (e) => { setErr(e.message); setLoading(false); });
+                    return () => unsub();
+                }, []);
+
+                const updateSub = (uid, plan) => {
+                    setBusyUid(uid);
+                    firebase.firestore().collection('users').doc(uid).update({
+                        subscription: plan,
+                        subscriptionGrantedBy: ADMIN_EMAIL,
+                        subscriptionUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }).catch(e => alert('Update failed: ' + e.message))
+                      .finally(() => setBusyUid(null));
+                };
+
+                const fmtTs = (ts) => {
+                    if (!ts || !ts.toDate) return '—';
+                    return ts.toDate().toLocaleString();
+                };
+
+                const card = { background: '#1a1a1a', borderRadius: '12px', padding: '16px', border: '1px solid #333' };
+                const statBig = { fontSize: '28px', fontWeight: 900, color: '#f5c518', lineHeight: 1 };
+                const statLabel = { fontSize: '11px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px' };
+                const th = { fontSize: '10px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'left', padding: '10px 8px', borderBottom: '1px solid #333' };
+                const td = { fontSize: '13px', color: '#eee', padding: '10px 8px', borderBottom: '1px solid #222' };
+
+                const totalUsers = users.length;
+                const paidUsers = users.filter(u => ['monthly', 'yearly', 'lifetime'].includes(u.subscription)).length;
+                const lifetimeUsers = users.filter(u => u.subscription === 'lifetime').length;
+                const conversion = totalUsers ? (paidUsers / totalUsers) : 0;
                 const fmtPct = (n) => (n * 100).toFixed(1) + '%';
-                const fmtDur = (s) => {
-                    const m = Math.floor(s / 60);
-                    const r = s % 60;
-                    return `${m}m ${r}s`;
-                };
-
-                const card = {
-                    background: '#1a1a1a', color: '#f5f0e6', borderRadius: '12px',
-                    padding: '16px', border: '1px solid #333', marginBottom: '12px'
-                };
-                const statBig = { fontSize: '28px', fontWeight: 800, color: '#f5c518', lineHeight: 1.1 };
-                const statLabel = { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#888', marginTop: '4px' };
-                const h = { fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#f5c518', marginBottom: '10px', borderBottom: '1px solid #333', paddingBottom: '6px' };
-                const row = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', fontSize: '14px', borderBottom: '1px solid #2a2a2a' };
-                const bar = (pct, color) => (
-                    <div style={{ height: '6px', background: '#2a2a2a', borderRadius: '3px', overflow: 'hidden', marginTop: '4px' }}>
-                        <div style={{ height: '100%', width: `${Math.min(100, pct * 100)}%`, background: color || '#f5c518' }} />
-                    </div>
-                );
 
                 return (
-                    <div style={{ padding: '8px 4px' }}>
-                        <div style={{ background: 'linear-gradient(135deg,#000,#2a1a00)', color: '#f5c518', borderRadius: '12px', padding: '18px 20px', marginBottom: '16px', border: '2px solid #f5c518' }}>
-                            <div style={{ fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.7 }}>Restricted · Admin Only</div>
-                            <div style={{ fontSize: '22px', fontWeight: 800, marginTop: '4px' }}>🔐 Usage Analytics Dashboard</div>
-                            <div style={{ fontSize: '12px', opacity: 0.7, marginTop: '6px' }}>Authenticated as <b>{loginEmail}</b> · Snapshot: {stats.generatedAt}</div>
+                    <div style={{ padding: '20px', maxWidth: '1100px', margin: '0 auto', color: '#eee' }}>
+                        <div style={{ marginBottom: '16px' }}>
+                            <div style={{ fontSize: '32px', fontWeight: 900, color: '#f5c518' }}>Admin</div>
+                            <div style={{ fontSize: '13px', color: '#999' }}>Live data from Firestore · Authenticated as <b style={{ color: '#f5c518' }}>{loginEmail}</b></div>
                         </div>
 
-                        {/* Active users */}
-                        <div style={{ ...card }}>
-                            <div style={h}>Active Users</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                                <div><div style={statBig}>{fmtInt(stats.dau)}</div><div style={statLabel}>DAU</div></div>
-                                <div><div style={statBig}>{fmtInt(stats.wau)}</div><div style={statLabel}>WAU</div></div>
-                                <div><div style={statBig}>{fmtInt(stats.mau)}</div><div style={statLabel}>MAU</div></div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+                            <div style={card}><div style={statBig}>{totalUsers}</div><div style={statLabel}>Total Users</div></div>
+                            <div style={card}><div style={statBig}>{paidUsers}</div><div style={statLabel}>Paid</div></div>
+                            <div style={card}><div style={statBig}>{lifetimeUsers}</div><div style={statLabel}>Lifetime</div></div>
+                            <div style={card}><div style={statBig}>{fmtPct(conversion)}</div><div style={statLabel}>Conversion</div></div>
+                        </div>
+
+                        <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+                            <div style={{ padding: '16px', borderBottom: '1px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ fontSize: '16px', fontWeight: 800, color: '#f5c518' }}>Registered users</div>
+                                {loading && <div style={{ fontSize: '12px', color: '#aaa' }}>Loading...</div>}
+                                {err && <div style={{ fontSize: '12px', color: '#c0392b' }}>{err}</div>}
                             </div>
-                            <div style={{ marginTop: '12px', fontSize: '13px', color: '#aaa' }}>
-                                Total registered: <b style={{ color: '#f5f0e6' }}>{fmtInt(stats.totalUsers)}</b> · DAU/MAU stickiness: <b style={{ color: '#f5c518' }}>{fmtPct(stats.stickiness)}</b>
-                            </div>
-                        </div>
-
-                        {/* Sessions */}
-                        <div style={{ ...card }}>
-                            <div style={h}>Sessions & Engagement</div>
-                            <div style={row}><span>Sessions / user / day</span><b>{stats.sessionsPerUserDaily.toFixed(1)}</b></div>
-                            <div style={row}><span>Sessions / user / week</span><b>{stats.sessionsPerUserWeekly.toFixed(1)}</b></div>
-                            <div style={row}><span>Avg session length</span><b>{fmtDur(stats.avgSessionLengthSec)}</b></div>
-                            <div style={row}><span>Median session length</span><b>{fmtDur(stats.medianSessionLengthSec)}</b></div>
-                            <div style={{ ...row, borderBottom: 'none' }}><span>Pages / screens per session</span><b>{stats.pagesPerSession.toFixed(1)}</b></div>
-                        </div>
-
-                        {/* Screens */}
-                        <div style={{ ...card }}>
-                            <div style={h}>Pages / Screens per Session</div>
-                            {stats.screenBreakdown.map(s => (
-                                <div key={s.name} style={{ padding: '8px 0', borderBottom: '1px solid #2a2a2a' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                                        <span>{s.name}</span>
-                                        <span style={{ color: '#aaa' }}>{fmtInt(s.views)} views · <b style={{ color: '#f5c518' }}>{fmtPct(s.pct)}</b></span>
-                                    </div>
-                                    {bar(s.pct)}
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Feature usage */}
-                        <div style={{ ...card }}>
-                            <div style={h}>Feature Usage</div>
-                            <div style={{ fontSize: '11px', color: '#888', marginBottom: '8px' }}>Unique users who used the feature in the last 30 days · total events</div>
-                            {stats.featureUsage.map(f => {
-                                const adoption = f.users / stats.mau;
-                                return (
-                                    <div key={f.name} style={{ padding: '8px 0', borderBottom: '1px solid #2a2a2a' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                                            <span>{f.name}</span>
-                                            <span style={{ color: '#aaa' }}>{fmtInt(f.users)} users · {fmtInt(f.events)} events</span>
-                                        </div>
-                                        <div style={{ fontSize: '11px', color: '#777', marginTop: '2px' }}>Adoption: {fmtPct(adoption)} of MAU</div>
-                                        {bar(adoption, '#8be28b')}
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Key actions */}
-                        <div style={{ ...card }}>
-                            <div style={h}>Frequency of Key Actions</div>
-                            {stats.keyActions.map(k => (
-                                <div key={k.name} style={row}><span>{k.name}</span><b style={{ color: '#f5c518' }}>{fmtInt(k.value)}</b></div>
-                            ))}
-                        </div>
-
-                        {/* Depth of usage */}
-                        <div style={{ ...card }}>
-                            <div style={h}>Depth of Usage per User</div>
-                            {stats.depthBuckets.map(b => (
-                                <div key={b.label} style={{ padding: '8px 0', borderBottom: '1px solid #2a2a2a' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                                        <span>{b.label}</span>
-                                        <span style={{ color: '#aaa' }}>{fmtInt(b.users)} · <b style={{ color: '#f5c518' }}>{fmtPct(b.pct)}</b></span>
-                                    </div>
-                                    {bar(b.pct, '#e28b8b')}
-                                </div>
-                            ))}
-                            <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', fontSize: '12px', color: '#aaa' }}>
-                                <div><b style={{ color: '#f5c518', display: 'block', fontSize: '18px' }}>{stats.avgTasksPerUser.toFixed(1)}</b>Avg tasks / user</div>
-                                <div><b style={{ color: '#f5c518', display: 'block', fontSize: '18px' }}>{stats.avgCompletedPerUser.toFixed(1)}</b>Avg completed / user</div>
-                                <div><b style={{ color: '#f5c518', display: 'block', fontSize: '18px' }}>{stats.avgPointsPerUser.toFixed(1)}</b>Avg points / user</div>
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '780px' }}>
+                                    <thead>
+                                        <tr>
+                                            <th style={th}>Email</th>
+                                            <th style={th}>Plan</th>
+                                            <th style={th}>Created</th>
+                                            <th style={th}>Last Seen</th>
+                                            <th style={{ ...th, textAlign: 'right' }}>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {users.length === 0 && !loading && (
+                                            <tr><td style={td} colSpan={5}>No users yet.</td></tr>
+                                        )}
+                                        {users.map(u => {
+                                            const planColor = u.subscription === 'lifetime' ? '#f5c518' :
+                                                              u.subscription === 'yearly' ? '#a6e22e' :
+                                                              u.subscription === 'monthly' ? '#66d9ef' : '#777';
+                                            const isBusy = busyUid === u.uid;
+                                            return (
+                                                <tr key={u.uid}>
+                                                    <td style={td}>{u.email || '—'}</td>
+                                                    <td style={td}>
+                                                        <span style={{ background: planColor, color: '#1a1a1a', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
+                                                            {u.subscription || 'free'}
+                                                        </span>
+                                                    </td>
+                                                    <td style={td}>{fmtTs(u.createdAt)}</td>
+                                                    <td style={td}>{fmtTs(u.lastSeen)}</td>
+                                                    <td style={{ ...td, textAlign: 'right' }}>
+                                                        {u.subscription !== 'lifetime' && (
+                                                            <button
+                                                                onClick={() => updateSub(u.uid, 'lifetime')}
+                                                                disabled={isBusy}
+                                                                style={{ background: '#f5c518', color: '#1a1a1a', border: 'none', padding: '6px 10px', borderRadius: '6px', fontWeight: 800, fontSize: '11px', cursor: 'pointer', marginRight: '4px' }}>
+                                                                {isBusy ? '...' : 'Grant Lifetime'}
+                                                            </button>
+                                                        )}
+                                                        {u.subscription !== 'free' && (
+                                                            <button
+                                                                onClick={() => updateSub(u.uid, 'free')}
+                                                                disabled={isBusy}
+                                                                style={{ background: 'transparent', color: '#aaa', border: '1px solid #444', padding: '6px 10px', borderRadius: '6px', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                                                                Downgrade
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
-                        {/* Retention */}
-                        <div style={{ ...card }}>
-                            <div style={h}>Retention</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                                <div><div style={statBig}>{fmtPct(stats.d1Retention)}</div><div style={statLabel}>D1</div></div>
-                                <div><div style={statBig}>{fmtPct(stats.d7Retention)}</div><div style={statLabel}>D7</div></div>
-                                <div><div style={statBig}>{fmtPct(stats.d30Retention)}</div><div style={statLabel}>D30</div></div>
-                            </div>
+                        <div style={{ marginTop: '20px' }}>
+                            <button
+                                onClick={deleteAllSampleData}
+                                style={{ background: '#c0392b', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                Delete Sample Data (my account)
+                            </button>
                         </div>
 
-                        <div style={{ fontSize: '11px', color: '#777', textAlign: 'center', padding: '8px 0 16px' }}>
-                            Data is simulated for the prototype. Wire up an analytics provider (PostHog, Mixpanel, Amplitude) to make this live.
+                        <div style={{ fontSize: '11px', color: '#777', marginTop: '16px' }}>
+                            User docs live in Firestore <code>/users/&#123;uid&#125;</code>. Only authenticated admins can see this page.
                         </div>
                     </div>
                 );

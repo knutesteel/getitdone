@@ -1734,6 +1734,28 @@
             line-height: 1.6;
         }
     </style>
+
+        /* Commenter highlight + comment system */
+        .commenter-banner { background: linear-gradient(135deg, #1a1a1a, #2a2a2a); border: 1px solid #f5c518; border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+        .commenter-banner-icon { font-size: 24px; }
+        .commenter-banner-text { font-size: 13px; color: #e5e5e5; line-height: 1.5; }
+        .commenter-banner b { color: #f5c518; }
+        .comment-highlight-btn { position: fixed; z-index: 9999; background: #f5c518; color: #1a1a1a; border: none; border-radius: 8px; padding: 6px 14px; font-weight: 800; font-size: 12px; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 6px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px; }
+        .comment-highlight-btn:hover { background: #e5b500; }
+        .comment-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        .comment-modal { background: #fff; border-radius: 16px; padding: 24px; width: 90%; max-width: 480px; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+        .comment-modal h3 { margin: 0 0 12px 0; font-size: 18px; font-weight: 900; color: #1a1a1a; }
+        .comment-modal textarea { width: 100%; min-height: 100px; border: 2px solid #ddd; border-radius: 10px; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box; margin-bottom: 12px; }
+        .comment-modal textarea:focus { border-color: #f5c518; outline: none; }
+        .comment-selected-text { background: #fffbe6; border-left: 3px solid #f5c518; padding: 8px 12px; font-size: 13px; color: #444; font-style: italic; border-radius: 0 8px 8px 0; margin-bottom: 12px; max-height: 80px; overflow-y: auto; word-break: break-word; }
+        .admin-notif-badge { background: #c0392b; color: white; font-size: 10px; font-weight: 900; min-width: 18px; height: 18px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; margin-left: 6px; padding: 0 4px; }
+        .comment-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+        .comment-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .comment-card-from { font-size: 12px; font-weight: 700; color: #1a1a1a; }
+        .comment-card-time { font-size: 11px; color: #999; }
+        .comment-card-selected { background: #fffbe6; border-left: 3px solid #f5c518; padding: 6px 10px; font-size: 12px; color: #666; font-style: italic; margin-bottom: 8px; border-radius: 0 6px 6px 0; word-break: break-word; }
+        .comment-card-note { font-size: 13px; color: #333; line-height: 1.5; }
+        .comment-card-view { font-size: 11px; color: #999; margin-top: 6px; }
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
     <style>
         .book-content { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #2a2a2a; line-height: 1.7; font-size: 16px; }
@@ -2178,6 +2200,16 @@
             const FREE_TASK_LIMIT = 10;
             const ADMIN_EMAIL = 'knutesteel@gmail.com';
 
+            // --- Commenter system state ---
+            const [commenterSelection, setCommenterSelection] = useState(null); // { text, x, y }
+            const [showCommentModal, setShowCommentModal] = useState(false);
+            const [commentNote, setCommentNote] = useState('');
+            const [commentSending, setCommentSending] = useState(false);
+            const [commentToast, setCommentToast] = useState('');
+            const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+            const [pendingCommenters, setPendingCommenters] = useState([]);
+            const [adminComments, setAdminComments] = useState([]);
+
             React.useEffect(() => {
                 if (!isLoggedIn) { setUserDoc(null); return; }
                 const user = firebase.auth().currentUser;
@@ -2189,6 +2221,7 @@
                             email: (user.email || loginEmail || '').toLowerCase(),
                             subscription: (user.email && user.email.toLowerCase() === ADMIN_EMAIL) ? 'lifetime' : 'free',
                             subscriptionGrantedBy: null,
+                            commenterStatus: (user.email && user.email.toLowerCase() === ADMIN_EMAIL) ? 'approved' : 'none',
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                             lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                         };
@@ -2198,7 +2231,15 @@
                     }
                 }).catch(() => {});
                 const unsub = ref.onSnapshot(snap => {
-                    if (snap.exists) setUserDoc({ uid: user.uid, ...snap.data() });
+                    if (snap.exists) {
+                        const data = { uid: user.uid, ...snap.data() };
+                        setUserDoc(data);
+                        // Show welcome modal for new users who haven't chosen commenter preference
+                        if (data.commenterStatus === 'none' && !window._gsdWelcomeShown) {
+                            window._gsdWelcomeShown = true;
+                            setTimeout(() => setShowWelcomeModal(true), 1500);
+                        }
+                    }
                 }, () => {});
                 return () => unsub();
             }, [isLoggedIn, loginEmail]);
@@ -2207,6 +2248,88 @@
                 if (!userDoc) return false;
                 return ['monthly', 'yearly', 'lifetime'].includes(userDoc.subscription);
             };
+
+            // Commenter helpers
+            const isCommenter = () => userDoc && userDoc.commenterStatus === 'approved';
+            const isAdmin = () => loginEmail.trim().toLowerCase() === ADMIN_EMAIL;
+
+            const requestCommenterAccess = () => {
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                firebase.firestore().collection('users').doc(user.uid).update({
+                    commenterStatus: 'requested',
+                    commenterRequestedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(e => console.error(e));
+            };
+
+            const submitComment = () => {
+                const user = firebase.auth().currentUser;
+                if (!user || !commenterSelection) return;
+                setCommentSending(true);
+                firebase.firestore().collection('comments').add({
+                    userId: user.uid,
+                    userEmail: (user.email || loginEmail || '').toLowerCase(),
+                    selectedText: commenterSelection.text || '',
+                    note: commentNote.trim(),
+                    view: currentView || 'unknown',
+                    read: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    setShowCommentModal(false);
+                    setCommentNote('');
+                    setCommenterSelection(null);
+                    setCommentToast('Comment sent to admin!');
+                    setTimeout(() => setCommentToast(''), 3000);
+                }).catch(e => {
+                    alert('Could not send comment: ' + e.message);
+                }).finally(() => setCommentSending(false));
+            };
+
+            // Listen for text selection (commenters only)
+            React.useEffect(() => {
+                if (!isCommenter()) { setCommenterSelection(null); return; }
+                const handleMouseUp = () => {
+                    const sel = window.getSelection();
+                    const text = sel ? sel.toString().trim() : '';
+                    if (text.length > 2 && text.length < 2000) {
+                        const range = sel.getRangeAt(0);
+                        const rect = range.getBoundingClientRect();
+                        setCommenterSelection({ text, x: rect.left + rect.width / 2, y: rect.top - 10 });
+                    } else {
+                        // Delay clear so button click registers
+                        setTimeout(() => setCommenterSelection(null), 200);
+                    }
+                };
+                document.addEventListener('mouseup', handleMouseUp);
+                return () => document.removeEventListener('mouseup', handleMouseUp);
+            }, [userDoc, currentView]);
+
+            // Admin: listen for pending commenter requests
+            React.useEffect(() => {
+                if (!isAdmin()) return;
+                const unsub = firebase.firestore().collection('users')
+                    .where('commenterStatus', '==', 'requested')
+                    .onSnapshot(snap => {
+                        const list = [];
+                        snap.forEach(d => list.push({ uid: d.id, ...d.data() }));
+                        setPendingCommenters(list);
+                    }, () => {});
+                return () => unsub();
+            }, [loginEmail]);
+
+            // Admin: listen for comments
+            React.useEffect(() => {
+                if (!isAdmin()) return;
+                const unsub = firebase.firestore().collection('comments')
+                    .orderBy('createdAt', 'desc')
+                    .limit(100)
+                    .onSnapshot(snap => {
+                        const list = [];
+                        snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+                        setAdminComments(list);
+                    }, () => {});
+                return () => unsub();
+            }, [loginEmail]);
 
             const countAllTasks = () => {
                 const matrixCount = Object.entries(tasks || {})
@@ -2805,6 +2928,9 @@
                                 style={{ background: currentView === 'admin' ? '#f5c518' : '#2a2a2a', color: currentView === 'admin' ? '#000' : '#f5c518', fontWeight: 700 }}
                             >
                                 🔐 Admin
+                                {(pendingCommenters.length > 0 || adminComments.filter(c => !c.read).length > 0) && (
+                                    <span className="admin-notif-badge">{pendingCommenters.length + adminComments.filter(c => !c.read).length}</span>
+                                )}
                             </button>
                         )}
                     </nav>
@@ -2843,7 +2969,101 @@
                         {currentView === 'admin' && loginEmail.trim().toLowerCase() === 'knutesteel@gmail.com' && <AdminView />}
                     </div>
 
-                    {showReviewPopup && (
+                    {/* Commenter: highlight-to-comment floating button */}
+                    {isCommenter() && commenterSelection && !showCommentModal && (
+                        <button
+                            className="comment-highlight-btn"
+                            style={{ left: Math.min(commenterSelection.x - 60, window.innerWidth - 160), top: commenterSelection.y - 44 }}
+                            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setShowCommentModal(true); }}
+                        >
+                            💬 Add Comment
+                        </button>
+                    )}
+
+                    {/* Commenter: comment modal */}
+                    {showCommentModal && (
+                        <div className="comment-modal-overlay" onClick={() => { setShowCommentModal(false); setCommentNote(''); }}>
+                            <div className="comment-modal" onClick={(e) => e.stopPropagation()}>
+                                <h3>💬 Add a Comment</h3>
+                                {commenterSelection && commenterSelection.text && (
+                                    <div className="comment-selected-text">
+                                        "{commenterSelection.text.slice(0, 300)}{commenterSelection.text.length > 300 ? '...' : ''}"
+                                    </div>
+                                )}
+                                <textarea
+                                    placeholder="Your note or suggestion for the admin..."
+                                    value={commentNote}
+                                    onChange={(e) => setCommentNote(e.target.value)}
+                                    autoFocus
+                                />
+                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={() => { setShowCommentModal(false); setCommentNote(''); }}
+                                        style={{ padding: '10px 16px', background: '#eee', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                                    >Cancel</button>
+                                    <button
+                                        onClick={submitComment}
+                                        disabled={!commentNote.trim() || commentSending}
+                                        style={{ padding: '10px 20px', background: commentNote.trim() ? '#f5c518' : '#ddd', color: '#1a1a1a', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: '13px', cursor: commentNote.trim() ? 'pointer' : 'default', textTransform: 'uppercase' }}
+                                    >{commentSending ? 'Sending...' : 'Send to Admin'}</button>
+                                </div>
+                                <div style={{ fontSize: '11px', color: '#999', marginTop: '10px', textAlign: 'center' }}>
+                                    Your comment will be sent directly to the app admin for review.
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Commenter toast */}
+                    {commentToast && (
+                        <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#f5c518', padding: '12px 24px', borderRadius: '10px', fontWeight: 800, fontSize: '14px', zIndex: 10001, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
+                            ✅ {commentToast}
+                        </div>
+                    )}
+
+                    {/* Welcome modal for new users: ask about commenter access */}
+                    {showWelcomeModal && (
+                        <div className="comment-modal-overlay" onClick={() => setShowWelcomeModal(false)}>
+                            <div className="comment-modal" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '48px', marginBottom: '8px' }}>👋</div>
+                                <h3 style={{ marginBottom: '8px' }}>Welcome to Get Sh*t Done!</h3>
+                                <div style={{ fontSize: '14px', color: '#666', lineHeight: 1.6, marginBottom: '20px' }}>
+                                    Would you like to be able to <b>comment and make suggestions</b> on the app?
+                                    As a commenter, you can highlight any text and send notes directly to the admin.
+                                </div>
+                                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                                    <button
+                                        onClick={() => { setShowWelcomeModal(false); const user = firebase.auth().currentUser; if (user) firebase.firestore().collection('users').doc(user.uid).update({ commenterStatus: 'declined' }).catch(()=>{}); }}
+                                        style={{ padding: '12px 20px', background: '#eee', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
+                                    >No thanks</button>
+                                    <button
+                                        onClick={() => { setShowWelcomeModal(false); requestCommenterAccess(); }}
+                                        style={{ padding: '12px 24px', background: '#f5c518', color: '#1a1a1a', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', textTransform: 'uppercase' }}
+                                    >Yes, I'd like to comment!</button>
+                                </div>
+                                <div style={{ fontSize: '11px', color: '#999', marginTop: '12px' }}>
+                                    Commenter access requires admin approval. You'll be notified once approved.
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Commenter: status banners */}
+                    {userDoc && userDoc.commenterStatus === 'requested' && (
+                        <div style={{ position: 'fixed', bottom: '16px', right: '16px', background: '#1a1a1a', border: '1px solid #f5c518', borderRadius: '12px', padding: '12px 16px', zIndex: 999, maxWidth: '300px', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
+                            <div style={{ fontSize: '13px', color: '#f5c518', fontWeight: 700, marginBottom: '4px' }}>⏳ Commenter Access Pending</div>
+                            <div style={{ fontSize: '12px', color: '#ccc', lineHeight: 1.4 }}>Your request to comment is awaiting admin approval.</div>
+                        </div>
+                    )}
+
+                    {isCommenter() && currentView !== 'admin' && (
+                        <div style={{ position: 'fixed', bottom: '16px', right: '16px', background: '#1a1a1a', border: '1px solid #f5c518', borderRadius: '12px', padding: '10px 14px', zIndex: 999, maxWidth: '260px', boxShadow: '0 4px 16px rgba(0,0,0,0.2)', cursor: 'pointer', opacity: 0.85 }} title="You're a commenter! Highlight text to add notes.">
+                            <div style={{ fontSize: '12px', color: '#f5c518', fontWeight: 700 }}>💬 Commenter Mode Active</div>
+                            <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px' }}>Highlight any text to add a note</div>
+                        </div>
+                    )}
+
+                                        {showReviewPopup && (
                         <div className="completion-overlay" onClick={() => setShowReviewPopup(false)}>
                             <div className="completion-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
                                 <div className="completion-emoji">📖⭐</div>
@@ -3990,6 +4210,7 @@
                                         <tr>
                                             <th style={th}>Email</th>
                                             <th style={th}>Plan</th>
+                                            <th style={th}>Commenter</th>
                                             <th style={th}>Created</th>
                                             <th style={th}>Last Seen</th>
                                             <th style={{ ...th, textAlign: 'right' }}>Actions</th>
@@ -3997,7 +4218,7 @@
                                     </thead>
                                     <tbody>
                                         {users.length === 0 && !loading && (
-                                            <tr><td style={td} colSpan={5}>No users yet.</td></tr>
+                                            <tr><td style={td} colSpan={6}>No users yet.</td></tr>
                                         )}
                                         {users.map(u => {
                                             const planColor = u.subscription === 'lifetime' ? '#f5c518' :
@@ -4011,6 +4232,12 @@
                                                         <span style={{ background: planColor, color: '#1a1a1a', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
                                                             {u.subscription || 'free'}
                                                         </span>
+                                                    </td>
+                                                    <td style={td}>
+                                                        {u.commenterStatus === 'approved' && <span style={{ color: '#27ae60', fontWeight: 700, fontSize: '11px' }}>✓ Yes</span>}
+                                                        {u.commenterStatus === 'requested' && <span style={{ color: '#f39c12', fontWeight: 700, fontSize: '11px' }}>⏳ Pending</span>}
+                                                        {u.commenterStatus === 'denied' && <span style={{ color: '#c0392b', fontWeight: 700, fontSize: '11px' }}>✗ Denied</span>}
+                                                        {(!u.commenterStatus || u.commenterStatus === 'none' || u.commenterStatus === 'declined') && <span style={{ color: '#666', fontSize: '11px' }}>—</span>}
                                                     </td>
                                                     <td style={td}>{fmtTs(u.createdAt)}</td>
                                                     <td style={td}>{fmtTs(u.lastSeen)}</td>
@@ -4031,6 +4258,20 @@
                                                                 Downgrade
                                                             </button>
                                                         )}
+                                                        {u.commenterStatus !== 'approved' && (
+                                                            <button
+                                                                onClick={() => firebase.firestore().collection('users').doc(u.uid).update({ commenterStatus: 'approved', commenterApprovedAt: firebase.firestore.FieldValue.serverTimestamp(), commenterApprovedBy: ADMIN_EMAIL })}
+                                                                style={{ background: '#27ae60', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '6px', fontWeight: 800, fontSize: '11px', cursor: 'pointer', marginLeft: '4px' }}>
+                                                                Grant Commenter
+                                                            </button>
+                                                        )}
+                                                        {u.commenterStatus === 'approved' && (
+                                                            <button
+                                                                onClick={() => firebase.firestore().collection('users').doc(u.uid).update({ commenterStatus: 'none' })}
+                                                                style={{ background: 'transparent', color: '#c0392b', border: '1px solid #c0392b', padding: '6px 10px', borderRadius: '6px', fontWeight: 700, fontSize: '11px', cursor: 'pointer', marginLeft: '4px' }}>
+                                                                Revoke Commenter
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             );
@@ -4039,6 +4280,87 @@
                                 </table>
                             </div>
                         </div>
+
+                        {/* Pending commenter requests */}
+                        {pendingCommenters.length > 0 && (
+                            <div style={{ ...card, marginBottom: '20px', marginTop: '20px' }}>
+                                <div style={{ padding: '16px', borderBottom: '1px solid #333' }}>
+                                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#f5c518' }}>
+                                        ⏳ Pending Commenter Requests <span className="admin-notif-badge">{pendingCommenters.length}</span>
+                                    </div>
+                                </div>
+                                {pendingCommenters.map(u => (
+                                    <div key={u.uid} style={{ padding: '12px 16px', borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <div style={{ fontSize: '14px', color: '#eee', fontWeight: 700 }}>{u.email}</div>
+                                            <div style={{ fontSize: '11px', color: '#888' }}>Requested: {u.commenterRequestedAt && u.commenterRequestedAt.toDate ? u.commenterRequestedAt.toDate().toLocaleString() : '—'}</div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                            <button
+                                                onClick={() => firebase.firestore().collection('users').doc(u.uid).update({ commenterStatus: 'approved', commenterApprovedAt: firebase.firestore.FieldValue.serverTimestamp(), commenterApprovedBy: ADMIN_EMAIL })}
+                                                style={{ background: '#27ae60', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 800, fontSize: '11px', cursor: 'pointer' }}>
+                                                ✓ Approve
+                                            </button>
+                                            <button
+                                                onClick={() => firebase.firestore().collection('users').doc(u.uid).update({ commenterStatus: 'denied' })}
+                                                style={{ background: 'transparent', color: '#c0392b', border: '1px solid #c0392b', padding: '6px 12px', borderRadius: '6px', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                                                Deny
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Comments feed */}
+                        <div style={{ ...card, marginBottom: '20px', marginTop: '20px' }}>
+                            <div style={{ padding: '16px', borderBottom: '1px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ fontSize: '16px', fontWeight: 800, color: '#f5c518' }}>
+                                    💬 Comments & Suggestions
+                                    {adminComments.filter(c => !c.read).length > 0 && (
+                                        <span className="admin-notif-badge">{adminComments.filter(c => !c.read).length}</span>
+                                    )}
+                                </div>
+                                {adminComments.filter(c => !c.read).length > 0 && (
+                                    <button
+                                        onClick={() => { adminComments.filter(c => !c.read).forEach(c => { firebase.firestore().collection('comments').doc(c.id).update({ read: true }).catch(()=>{}); }); }}
+                                        style={{ background: 'transparent', color: '#f5c518', border: '1px solid #f5c518', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                                        Mark all read
+                                    </button>
+                                )}
+                            </div>
+                            <div style={{ maxHeight: '400px', overflowY: 'auto', padding: '12px 16px' }}>
+                                {adminComments.length === 0 && (
+                                    <div style={{ fontSize: '13px', color: '#888', padding: '16px', textAlign: 'center' }}>No comments yet.</div>
+                                )}
+                                {adminComments.map(c => (
+                                    <div key={c.id} style={{ padding: '12px', marginBottom: '8px', background: c.read ? '#111' : '#1c1c00', borderRadius: '10px', border: c.read ? '1px solid #222' : '1px solid #f5c518' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#f5c518' }}>{c.userEmail}</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ fontSize: '10px', color: '#888' }}>{c.createdAt && c.createdAt.toDate ? c.createdAt.toDate().toLocaleString() : ''}</div>
+                                                {!c.read && (
+                                                    <button
+                                                        onClick={() => firebase.firestore().collection('comments').doc(c.id).update({ read: true })}
+                                                        style={{ background: '#333', color: '#aaa', border: 'none', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer' }}>
+                                                        ✓
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {c.selectedText && (
+                                            <div style={{ background: 'rgba(245,197,24,0.08)', borderLeft: '3px solid #f5c518', padding: '6px 10px', fontSize: '12px', color: '#ccc', fontStyle: 'italic', marginBottom: '6px', borderRadius: '0 6px 6px 0', maxHeight: '60px', overflow: 'hidden' }}>
+                                                "{c.selectedText.slice(0, 200)}{c.selectedText.length > 200 ? '...' : ''}"
+                                            </div>
+                                        )}
+                                        <div style={{ fontSize: '13px', color: '#eee', lineHeight: 1.5 }}>{c.note}</div>
+                                        <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>View: {c.view || '—'}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* User table: add commenter column */}
 
                         <div style={{ marginTop: '20px' }}>
                             <button

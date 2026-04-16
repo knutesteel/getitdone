@@ -28,11 +28,13 @@ A points-driven task matrix that rewards real work, punishes busywork, and keeps
 - Calendar view (month / week / day)
 - Wins board and reflection log
 - Weekly reset workflow
-- "Weird News of the Week" meme banner on every tab (25 stories, 6 shown per reload) with squirrel-warning popups that cost -1 point to chase
+- Daily "News of the Day" rabbit-hole stories with squirrel-warning popups
 - Amazon review prompt (+5 points, weekly contest)
 - Reviews tab with upvote/downvote on book reviews
-- Email-gated login
-- Admin analytics dashboard (DAU/WAU/MAU, sessions, feature usage, retention) — restricted to the owner account
+- "Why Am I Here" tab with full book manuscript and sticky chapter navigation
+- Firebase Auth (passwordless email link sign-in)
+- Firebase Firestore for user data + paywall
+- Admin dashboard — restricted to the owner account
 
 ## Run locally
 
@@ -40,13 +42,7 @@ Just open `index.html` in a browser. That's it.
 
 ## Deploy
 
-Any static host works (Netlify, Vercel, Cloudflare Pages, GitHub Pages). No build, no environment variables.
-
-## Roadmap
-
-- Wire up a real analytics provider (PostHog / Mixpanel / Amplitude) to replace the simulated admin stats
-- Real auth + persistence (currently in-memory per session)
-- Weekly news + review pools pulled from a CMS instead of hard-coded arrays
+Hosted on GitHub Pages. No build step, no environment variables. Just static files served from the `main` branch root.
 
 ---
 
